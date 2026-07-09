@@ -1,0 +1,12 @@
+{
+  "name": "Empire Elite Rides",
+  "short_name": "Elite Rides",
+  "description": "Luxury chauffeur service in Albany, New York and the Capital Region.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090a0b",
+  "theme_color": "#090a0b",
+  "icons": [
+    {"src": "/assets/images/branding/empire-elite-logo.png", "sizes": "1536x1024", "type": "image/png", "purpose": "any"}
+  ]
+}
