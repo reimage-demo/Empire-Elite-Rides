@@ -1,10 +1,14 @@
 # Empire Elite Rides
 
-The public site is intentionally static (`index.html`, `booking.html`, `styles.css`, and plain JavaScript). The private React admin portal lives in `admin-portal/` and uses Vite and Convex.
+The project has three deliberately separate layers:
+
+- The public site is static HTML, CSS, and JavaScript at the project root.
+- `convex/` is the shared root-level backend used by both the public booking form and the admin portal.
+- `admin-portal/` is the private Vite/React administration interface.
 
 ## Connect the production Convex deployment
 
-The project is connected to the existing **Empire Elite Rides** Convex project. Its functions are deployed to production at `https://bold-okapi-506.convex.cloud`, and both clients are configured to use that deployment.
+The project is connected to the existing **Empire Elite Rides** Convex project. Its functions are deployed to production at `https://bold-okapi-506.convex.cloud`, and both clients use that deployment.
 
 The protected admin credentials have been set in Convex production (they remain server-side). To rotate them later:
 
@@ -17,6 +21,6 @@ Pushover booking notifications use the protected Convex environment variables `P
 
 The admin portal includes a **New Booking** view. Admin-created bookings use the same conflict and availability checks as public requests, are confirmed immediately, and trigger the same Pushover notification action.
 
-Run `npm run convex:deploy` when backend functions change, then `npm run build` for admin UI changes. Serve the project root with any static host; do not open the HTML via `file://` because the booking page imports the Convex browser client as an ES module.
+Run `npm run convex:deploy` from the project root when shared backend functions change. Run `npm run admin:build` from the root (or `npm run build` inside `admin-portal/`) for admin UI changes. Serve the public files from the project root; do not open the HTML through `file://` because the booking page imports the Convex browser client as an ES module.
 
 The `bookings:create` mutation rejects overlapping reservations and maintains a two-hour buffer after every active booking. Cancelled bookings release their times.
