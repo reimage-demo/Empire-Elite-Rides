@@ -1,6 +1,6 @@
 # Empire Elite Rides
 
-> Empire Elite Rides is a private luxury chauffeur service serving Albany, New York and the Capital Region.
+> Empire Elite Rides is a private luxury chauffeur service serving Albany, Rensselaer and Saratoga counties, Glens Falls, Lake George, and New York's Capital Region.
 
 ## Official website
 - Home: https://empireeliterides.com/
@@ -24,19 +24,17 @@
 - Reservation requests are personally reviewed and are not confirmed until accepted by Empire Elite Rides.
 
 ## Service area
-- Albany, New York
-- Troy, New York
-- Schenectady, New York
-- Cohoes, New York
-- Watervliet, New York
+- Saratoga County: Ballston Spa, Clifton Park, Halfmoon, Malta, Wilton, Milton, Ballston, Stillwater, Waterford, and Moreau
+- Rensselaer County: Troy, Rensselaer, East Greenbush, North Greenbush, Brunswick, Schodack, Hoosick, Sand Lake, Poestenkill, Nassau, Berlin, and Stephentown
+- Albany County: Albany, Cohoes, Watervliet, Colonie, Guilderland, Bethlehem, New Scotland, Green Island, Voorheesville, Altamont, Menands, and Ravena
+- Glens Falls, New York
+- Lake George, New York
 - Long-distance and interstate transportation by request
 
 ## Local service information
-- Albany service includes airport transportation, corporate travel, weddings, events, and professional appointments.
-- Troy service includes downtown events, private evenings, business travel, and airport connections.
-- Schenectady service includes theater and dining trips, corporate transportation, weddings, and long-distance travel.
-- Cohoes service includes celebrations, airport trips, family transportation, and multi-stop itineraries.
-- Watervliet service includes personal chauffeur requests, appointments, events, and regional connections.
+- Corporate and business service includes transportation for business owners, executive and client pickups, meetings, airport connections, and multi-stop itineraries.
+- Wedding service includes planned transportation for couples, wedding parties, guests, hotel pickups, venues, and return travel.
+- Upscale private service includes dinners, celebrations, resorts, hotels, special events, and regional connections.
 
 ## Policies
 - Privacy and data: https://empireeliterides.com/privacy.html

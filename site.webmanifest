@@ -7,6 +7,6 @@
   "background_color": "#090a0b",
   "theme_color": "#090a0b",
   "icons": [
-    {"src": "/assets/images/branding/empire-elite-logo.png", "sizes": "1536x1024", "type": "image/png", "purpose": "any"}
+    {"src": "/assets/images/branding/empire-elite-icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any"}
   ]
 }

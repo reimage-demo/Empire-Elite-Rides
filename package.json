@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "check:js": "node --check pricing-client.js && node --check quick-price.js && node --check booking.js && node --check script.js",
+    "typecheck": "tsc -p convex/tsconfig.json",
     "convex:dev": "convex dev",
     "convex:deploy": "convex deploy",
     "admin:dev": "npm --prefix admin-portal run dev",
@@ -11,5 +14,8 @@
   },
   "dependencies": {
     "convex": "^1.31.5"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
   }
 }

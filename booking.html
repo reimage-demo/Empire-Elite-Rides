@@ -3,28 +3,29 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Request luxury chauffeur service in Albany, NY for airport transportation, corporate travel, weddings, special events and private trips.">
+  <meta name="description" content="Request luxury chauffeur service across Albany, Rensselaer and Saratoga counties, Glens Falls and Lake George for business travel, weddings and private trips.">
   <meta name="robots" content="index, follow, max-image-preview:large">
   <meta name="theme-color" content="#090a0b">
-  <link rel="icon" href="assets/images/branding/empire-elite-logo.png" type="image/png">
+  <link rel="icon" href="assets/images/branding/empire-elite-icon.png" type="image/png">
   <link rel="manifest" href="site.webmanifest">
   <link rel="canonical" href="https://empireeliterides.com/booking.html">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Empire Elite Rides">
-  <meta property="og:title" content="Book Luxury Chauffeur Service in Albany, NY">
-  <meta property="og:description" content="Request private airport, corporate, wedding or special-event transportation with Empire Elite Rides.">
+  <meta property="og:title" content="Book Capital Region Luxury Chauffeur Service">
+  <meta property="og:description" content="Request corporate, airport, wedding or upscale private transportation across the Capital Region and Lake George area.">
   <meta property="og:url" content="https://empireeliterides.com/booking.html">
   <meta property="og:image" content="https://empireeliterides.com/assets/images/vehicle/expedition-city-hero.png">
   <meta name="twitter:card" content="summary_large_image">
-  <title>Book Chauffeur Service Albany NY | Empire Elite Rides</title>
+  <title>Book Capital Region Chauffeur Service | Empire Elite Rides</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://esm.sh" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&amp;family=Montserrat:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header class="site-header">
-    <a class="brand" href="index.html" aria-label="Empire Elite Rides home"><img src="assets/images/branding/empire-elite-nav-logo.png" alt="Empire Elite Rides — Luxury Chauffeur Service"></a>
+    <a class="brand" href="index.html" aria-label="Empire Elite Rides home"><span class="brand-mark" aria-hidden="true"><img src="assets/images/branding/empire-elite-nav-logo.png" alt=""></span><span class="brand-name"><span>Empire</span><span><strong>Elite</strong> Rides</span></span></a>
     <button class="menu-toggle" type="button" aria-label="Open navigation" aria-expanded="false"><span></span><span></span><span></span></button>
     <nav class="main-nav" aria-label="Main navigation"><a href="index.html">Home</a><a class="active" href="booking.html">Book Now</a><a class="nav-call" href="tel:+18603261089">Call Now</a></nav>
   </header>
@@ -33,47 +34,75 @@
     <section class="booking-intro">
       <p class="eyebrow">Private chauffeur service</p>
       <h1>Where may we take you?</h1>
-      <p>Tell us about your occasion. Your request is held once submitted and confirmed personally by our team.</p>
+      <p>Tell us about your trip, review your ride price, and send your reservation request to our team.</p>
       <div class="service-note"><span>01</span><p><strong>One exclusive vehicle.</strong><br>Every reservation includes our black 2017 Ford Expedition Limited.</p></div>
       <div class="service-note"><span>02</span><p><strong>Prepared for your arrival.</strong><br>The Expedition is washed, detailed, and readied before every scheduled service.</p></div>
     </section>
 
     <section class="booking-card">
       <form id="booking-form">
-        <div class="form-heading"><p>Reservation request</p><span>All fields marked * are required</span></div>
+        <div class="form-heading"><p>Plan your reservation</p><span>Trip details and pricing</span></div>
 
-        <fieldset>
-          <legend>Contact details</legend>
-          <div class="form-grid two">
-            <label>Full name *<input name="fullName" autocomplete="name" required maxlength="100" placeholder="Your full name"></label>
-            <label>Email address *<input name="email" type="email" autocomplete="email" required placeholder="you@example.com"></label>
-            <label>Phone number *<input name="phone" type="tel" inputmode="numeric" autocomplete="tel" required maxlength="12" placeholder="860-326-1089" aria-describedby="phone-hint"><small id="phone-hint" class="field-hint">Numbers format automatically</small></label>
-            <label>Preferred contact *<select name="contactMethod" required><option value="">Choose one</option><option value="text">Text message</option><option value="call">Phone call</option><option value="email">Email</option></select></label>
-          </div>
+        <fieldset><legend>1. Trip details</legend><div class="form-grid two">
+          <div class="address-field"><label for="booking-pickup">Pickup address *</label><input id="booking-pickup" name="pickupAddress" required placeholder="Start typing a full address" aria-describedby="booking-address-help"><div id="booking-pickup-suggestions" class="address-suggestions" role="listbox" hidden></div></div>
+          <div class="address-field"><label for="booking-dropoff">Drop-off address *</label><input id="booking-dropoff" name="dropoffAddress" required placeholder="Start typing a full address" aria-describedby="booking-address-help"><div id="booking-dropoff-suggestions" class="address-suggestions" role="listbox" hidden></div></div>
+          <label>Service type *<select name="tripType" required><option value="one_way">One-way trip</option><option value="round_trip">Round trip</option><option value="hourly">Hourly chauffeur service</option></select></label>
+          <label>Occasion *<select name="eventType" required aria-label="Occasion"><option value="">Choose an occasion</option></select></label>
+          <small id="booking-address-help" class="availability-hint">Choose each address from the suggestions. If you edit an address, select the updated result again.</small>
+        </div>
+        <div id="additional-stops" class="dynamic-fields"></div><button id="add-stop" class="inline-action" type="button">+ Add a stop</button>
         </fieldset>
 
-        <fieldset>
-          <legend>Service details</legend>
-          <div class="form-grid two">
-            <label>Occasion *<select name="eventType" required aria-label="Occasion"><option value="">Choose an occasion</option></select></label>
-            <label>Service direction *<select name="tripType" required><option value="">Choose service</option><option value="pickup">Pickup only</option><option value="dropoff">Drop-off only</option><option value="both">Pickup and drop-off</option></select></label>
-            <label>Service date *<input name="serviceDate" type="date" required></label>
-            <div class="time-pair"><label>Start time *<select name="startTime" required aria-label="Start time in 30-minute intervals"></select></label><label>End time *<select name="endTime" required aria-label="End time in 30-minute intervals"></select></label><small class="availability-hint" data-availability-status>Unavailable times are disabled automatically.</small></div>
-            <label>Pickup address *<input name="pickupAddress" autocomplete="street-address" required placeholder="Street, city and state"></label>
-            <label>Destination *<input name="destination" required placeholder="Venue, airport or full address"></label>
-          </div>
-          <label class="full-label">Anything else we should know?<textarea name="notes" maxlength="1000" placeholder="Flight number, number of passengers, itinerary or special requests"></textarea></label>
-        </fieldset>
+        <fieldset><legend>2. Date and time</legend><div class="form-grid two">
+          <label>Pickup date *<input name="pickupDate" type="date" required></label>
+          <label>Pickup time *<input name="pickupTime" type="time" step="1800" required></label>
+        </div></fieldset>
 
-        <div class="form-data-notice"><strong>Reservation data notice</strong><p>We collect the contact and trip information entered here to review your request, prevent scheduling conflicts, and contact you about service. Read our <a href="privacy.html">Privacy &amp; Data Policy</a>.</p></div>
-        <label class="consent"><input name="consent" type="checkbox" required><span>I agree that this is a reservation request and that Empire Elite Rides may contact me by my selected method to confirm availability and final details.</span></label>
-        <div id="form-message" class="form-message" role="status" aria-live="polite"></div>
-        <button class="gold-button submit-button" type="submit">Request Reservation <span>→</span></button>
+        <fieldset id="return-fields" hidden><legend>Return trip</legend><div class="form-grid two">
+          <div class="address-field"><label for="return-pickup">Return pickup address *</label><input id="return-pickup" name="returnPickupAddress" placeholder="Start typing a full address"><div id="return-pickup-suggestions" class="address-suggestions" role="listbox" hidden></div></div>
+          <div class="address-field"><label for="return-dropoff">Final drop-off address *</label><input id="return-dropoff" name="returnDropoffAddress" placeholder="Start typing a full address"><div id="return-dropoff-suggestions" class="address-suggestions" role="listbox" hidden></div></div>
+          <label>Return date *<input name="returnDate" type="date"></label><label>Return time *<input name="returnTime" type="time" step="1800"></label>
+        </div></fieldset>
+
+        <fieldset><legend>3. Passenger details</legend><div class="form-grid two">
+          <label>Passengers *<input name="passengerCount" type="number" min="1" max="7" value="1" required></label>
+          <label>Luggage pieces *<input name="luggageCount" type="number" min="0" max="12" value="0" required></label>
+        </div></fieldset>
+
+        <fieldset><legend>4. Additional services</legend><div class="form-grid two">
+          <label>Requested waiting time<select name="requestedWaitMinutes"><option value="0">No waiting requested</option><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">1 hour</option><option value="90">1½ hours</option><option value="120">2 hours</option></select></label>
+          <label>Airport service<select name="airportService"><option value="none">No</option><option value="pickup">Airport pickup</option><option value="dropoff">Airport drop-off</option></select></label>
+          <label>Flight number<input name="flightNumber" maxlength="20" placeholder="Only for airport service"></label>
+          <label class="check-option"><input name="meetAndGreet" type="checkbox"><span>Meet-and-greet service</span></label>
+          <label id="hourly-field" hidden>Hours requested<input name="hourlyHours" type="number" min="3" max="14" step="0.5" value="3"></label>
+          <label>Promotion code<input name="promotionCode" maxlength="30" autocomplete="off"></label>
+        </div></fieldset>
+
+        <fieldset><legend>5. Customer information</legend><div class="form-grid two">
+          <label>Full name *<input name="fullName" autocomplete="name" required maxlength="100" placeholder="Your full name"></label>
+          <label>Email address *<input name="email" type="email" autocomplete="email" required placeholder="you@example.com"></label>
+          <label>Phone number *<input name="phone" type="tel" inputmode="numeric" autocomplete="tel" required maxlength="12" placeholder="860-326-1089"><small class="field-hint">Numbers format automatically</small></label>
+          <label>Preferred contact *<select name="contactMethod" required><option value="text">Text message</option><option value="call">Phone call</option><option value="email">Email</option></select></label>
+        </div><label class="full-label">Special instructions<textarea name="notes" maxlength="1000" placeholder="Airline, planned itinerary, accessibility needs, or other details"></textarea></label></fieldset>
+
+        <section class="booking-quote" aria-labelledby="booking-price-title"><p class="eyebrow">6. Price summary</p><h2 id="booking-price-title">Your ride price</h2>
+          <div id="booking-quote-placeholder"><p>Complete the route and trip details, then request your official price.</p></div>
+          <div id="booking-quote-result" hidden><strong data-booking-total></strong><p data-booking-quote-label></p><dl data-booking-breakdown></dl><p class="quote-expiration" data-quote-expiration></p></div>
+          <p id="quote-message" class="quote-status" role="status" aria-live="polite"></p>
+          <button id="calculate-booking-price" class="gold-button" type="button">Calculate My Price <span>→</span></button>
+        </section>
+
+        <section class="reservation-submit"><p class="eyebrow">7. Reservation request</p>
+          <div class="form-data-notice"><strong>Secure reservation request</strong><p>We’ll review your trip details and availability before confirming your reservation. No online payment is required. Read our <a href="privacy.html">Privacy &amp; Data Policy</a>.</p></div>
+          <label class="consent"><input name="consent" type="checkbox" required><span>I agree to the reservation terms and authorize Empire Elite Rides to contact me about this service.</span></label>
+          <div id="form-message" class="form-message" role="status" aria-live="polite"></div>
+          <button id="reserve-button" class="gold-button submit-button" type="submit" disabled>Request Reservation <span>→</span></button>
+        </section>
       </form>
     </section>
   </main>
   <footer class="site-footer">
-    <div class="footer-brand"><img src="assets/images/branding/empire-elite-logo.png" alt="Empire Elite Rides"><p>Private luxury chauffeur service in Albany, New York and the Capital Region.</p></div>
+    <div class="footer-brand"><img src="assets/images/branding/empire-elite-logo.png" alt="Empire Elite Rides"><p>Private luxury chauffeur service across Albany, Rensselaer and Saratoga counties, Glens Falls, Lake George, and the Capital Region.</p></div>
     <div class="footer-column"><p class="footer-title">Explore</p><a href="index.html">Home</a><a href="service-areas.html">Service Areas</a><a href="booking.html">Book Now</a><a href="index.html#faq">FAQs</a></div>
     <div class="footer-column"><p class="footer-title">Legal</p><a href="privacy.html">Privacy &amp; Data</a><a href="terms.html">Terms of Use</a><a href="cookie-policy.html">Cookie Policy</a><a href="accessibility.html">Accessibility</a><button type="button" data-cookie-settings>Cookie Preferences</button></div>
     <div class="footer-column"><p class="footer-title">Contact</p><a class="footer-phone" href="tel:+18603261089">860-326-1089</a><p>Serving Albany &amp; New York’s Capital Region</p></div>
