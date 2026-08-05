@@ -148,8 +148,10 @@ img { display: block; max-width: 100%; }
 .form-heading { display: flex; align-items: end; justify-content: space-between; gap: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
 .form-heading p { margin: 0; font-family: "Cormorant Garamond", Georgia, serif; font-size: 34px; font-weight: 600; }
 .form-heading span { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .15em; }
-fieldset { min-width: 0; margin: 0; padding: 42px 0; border: 0; border-bottom: 1px solid var(--line); }
-legend { padding: 0; margin-bottom: 24px; text-transform: uppercase; letter-spacing: .3em; font-size: 11px; font-weight: 700; color: #8d691a; }
+fieldset { position: relative; min-width: 0; margin: 0; padding: 42px 0; border: 0; }
+fieldset::after { position: absolute; right: 0; bottom: 0; left: 0; height: 1px; background: var(--line); content: ""; }
+legend { display: block; float: left; width: 100%; margin: 0; padding: 0 0 24px; text-transform: uppercase; letter-spacing: .3em; font-size: 11px; font-weight: 700; color: #8d691a; }
+legend + .form-grid { clear: both; }
 .form-grid { display: grid; align-items: start; gap: 24px; }
 .form-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 label { display: grid; align-content: start; gap: 8px; width: 100%; min-width: 0; max-width: 100%; color: #555; text-transform: uppercase; letter-spacing: .13em; font-size: 9px; font-weight: 700; }

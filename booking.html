@@ -42,9 +42,16 @@
     <section class="booking-card">
       <section id="payment-return" class="payment-return" role="status" aria-live="polite" hidden></section>
       <form id="booking-form">
-        <div class="form-heading"><p>Plan your reservation</p><span>Trip details and pricing</span></div>
+        <div class="form-heading"><p>Plan your reservation</p><span>Your details, trip details and pricing</span></div>
 
-        <fieldset><legend>1. Trip details</legend><div class="form-grid two">
+        <fieldset><legend>1. Customer information</legend><div class="form-grid two">
+          <label>Full name *<input name="fullName" autocomplete="name" required maxlength="100" placeholder="Your full name"></label>
+          <label>Email address *<input name="email" type="email" autocomplete="email" required placeholder="you@example.com"></label>
+          <label>Phone number *<input name="phone" type="tel" inputmode="numeric" autocomplete="tel" required maxlength="12" placeholder="860-326-1089"><small class="field-hint">Numbers format automatically</small></label>
+          <label>Preferred contact *<select name="contactMethod" required><option value="text">Text message</option><option value="call">Phone call</option><option value="email">Email</option></select></label>
+        </div><label class="full-label">Special instructions<textarea name="notes" maxlength="1000" placeholder="Airline, planned itinerary, accessibility needs, or other details"></textarea></label></fieldset>
+
+        <fieldset><legend>2. Trip details</legend><div class="form-grid two">
           <div class="address-field"><label for="booking-pickup">Pickup address *</label><input id="booking-pickup" name="pickupAddress" required placeholder="Start typing a full address" aria-describedby="booking-address-help"><div id="booking-pickup-suggestions" class="address-suggestions" role="listbox" hidden></div></div>
           <div class="address-field"><label for="booking-dropoff">Drop-off address *</label><input id="booking-dropoff" name="dropoffAddress" required placeholder="Start typing a full address" aria-describedby="booking-address-help"><div id="booking-dropoff-suggestions" class="address-suggestions" role="listbox" hidden></div></div>
           <label>Service type *<select name="tripType" required><option value="one_way">One-way trip</option><option value="round_trip">Round trip</option><option value="hourly">Hourly chauffeur service</option></select></label>
@@ -54,9 +61,34 @@
         <div id="additional-stops" class="dynamic-fields"></div><button id="add-stop" class="inline-action" type="button">+ Add a stop</button>
         </fieldset>
 
-        <fieldset><legend>2. Date and time</legend><div class="form-grid two">
+        <fieldset><legend>3. Date and time</legend><div class="form-grid two">
           <label>Pickup date *<input name="pickupDate" type="date" required></label>
-          <label>Pickup time *<input name="pickupTime" type="time" step="1800" required></label>
+          <label for="booking-pickup-time">Pickup time *<select id="booking-pickup-time" name="pickupTime" required>
+            <option value="00:00">12:00 AM</option><option value="00:30">12:30 AM</option>
+            <option value="01:00">1:00 AM</option><option value="01:30">1:30 AM</option>
+            <option value="02:00">2:00 AM</option><option value="02:30">2:30 AM</option>
+            <option value="03:00">3:00 AM</option><option value="03:30">3:30 AM</option>
+            <option value="04:00">4:00 AM</option><option value="04:30">4:30 AM</option>
+            <option value="05:00">5:00 AM</option><option value="05:30">5:30 AM</option>
+            <option value="06:00">6:00 AM</option><option value="06:30">6:30 AM</option>
+            <option value="07:00">7:00 AM</option><option value="07:30">7:30 AM</option>
+            <option value="08:00">8:00 AM</option><option value="08:30">8:30 AM</option>
+            <option value="09:00">9:00 AM</option><option value="09:30">9:30 AM</option>
+            <option value="10:00">10:00 AM</option><option value="10:30">10:30 AM</option>
+            <option value="11:00">11:00 AM</option><option value="11:30">11:30 AM</option>
+            <option value="12:00">12:00 PM</option><option value="12:30">12:30 PM</option>
+            <option value="13:00">1:00 PM</option><option value="13:30">1:30 PM</option>
+            <option value="14:00">2:00 PM</option><option value="14:30">2:30 PM</option>
+            <option value="15:00">3:00 PM</option><option value="15:30">3:30 PM</option>
+            <option value="16:00">4:00 PM</option><option value="16:30">4:30 PM</option>
+            <option value="17:00">5:00 PM</option><option value="17:30">5:30 PM</option>
+            <option value="18:00">6:00 PM</option><option value="18:30">6:30 PM</option>
+            <option value="19:00">7:00 PM</option><option value="19:30">7:30 PM</option>
+            <option value="20:00">8:00 PM</option><option value="20:30">8:30 PM</option>
+            <option value="21:00">9:00 PM</option><option value="21:30">9:30 PM</option>
+            <option value="22:00">10:00 PM</option><option value="22:30">10:30 PM</option>
+            <option value="23:00">11:00 PM</option><option value="23:30">11:30 PM</option>
+          </select></label>
         </div></fieldset>
 
         <fieldset id="return-fields" hidden><legend>Return trip</legend><div class="form-grid two">
@@ -65,12 +97,12 @@
           <label>Return date *<input name="returnDate" type="date"></label><label>Return time *<input name="returnTime" type="time" step="1800"></label>
         </div></fieldset>
 
-        <fieldset><legend>3. Passenger details</legend><div class="form-grid two">
+        <fieldset><legend>4. Passenger details</legend><div class="form-grid two">
           <label>Passengers *<input name="passengerCount" type="number" min="1" max="7" value="1" required></label>
           <label>Luggage pieces *<input name="luggageCount" type="number" min="0" max="12" value="0" required></label>
         </div></fieldset>
 
-        <fieldset><legend>4. Additional services</legend><div class="form-grid two">
+        <fieldset><legend>5. Additional services</legend><div class="form-grid two">
           <label>Requested waiting time<select name="requestedWaitMinutes"><option value="0">No waiting requested</option><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">1 hour</option><option value="90">1½ hours</option><option value="120">2 hours</option></select></label>
           <label>Airport service<select name="airportService"><option value="none">No</option><option value="pickup">Airport pickup</option><option value="dropoff">Airport drop-off</option></select></label>
           <label>Flight number<input name="flightNumber" maxlength="20" placeholder="Only for airport service"></label>
@@ -78,13 +110,6 @@
           <label id="hourly-field" hidden>Hours requested<input name="hourlyHours" type="number" min="3" max="14" step="0.5" value="3"></label>
           <label>Promotion code<input name="promotionCode" maxlength="30" autocomplete="off"></label>
         </div></fieldset>
-
-        <fieldset><legend>5. Customer information</legend><div class="form-grid two">
-          <label>Full name *<input name="fullName" autocomplete="name" required maxlength="100" placeholder="Your full name"></label>
-          <label>Email address *<input name="email" type="email" autocomplete="email" required placeholder="you@example.com"></label>
-          <label>Phone number *<input name="phone" type="tel" inputmode="numeric" autocomplete="tel" required maxlength="12" placeholder="860-326-1089"><small class="field-hint">Numbers format automatically</small></label>
-          <label>Preferred contact *<select name="contactMethod" required><option value="text">Text message</option><option value="call">Phone call</option><option value="email">Email</option></select></label>
-        </div><label class="full-label">Special instructions<textarea name="notes" maxlength="1000" placeholder="Airline, planned itinerary, accessibility needs, or other details"></textarea></label></fieldset>
 
         <section class="booking-quote" aria-labelledby="booking-price-title"><p class="eyebrow">6. Price summary</p><h2 id="booking-price-title">Your ride price</h2>
           <div id="booking-quote-placeholder"><p>Complete the route and trip details, then request your official price.</p></div>
