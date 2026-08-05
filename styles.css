@@ -113,11 +113,11 @@ img { display: block; max-width: 100%; }
 .areas-cta > p:not(.eyebrow) { max-width: 750px; margin: 24px auto 35px; color: rgba(255,255,255,.68); }
 .areas-cta > div { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 30px; }
 .areas-cta .text-call { color: var(--gold-bright); }
-.trust-grid { width: min(1180px, 100%); display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin-top: 58px; background: #d9d4c8; border: 1px solid #d9d4c8; text-align: left; }
-.trust-grid article { padding: clamp(27px, 4vw, 48px); background: #fff; }
-.trust-grid article > span { color: #a57912; font-size: 16px; font-weight: 650; }
-.trust-grid h3 { margin: 18px 0 10px; font-size: 24px; line-height: 1.25; }
-.trust-grid p { margin: 0; color: #666; }
+.trust-grid { width: min(1180px, 100%); display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin-top: 58px; background: #d9d4c8; border: 1px solid #d9d4c8; text-align: center; }
+.trust-grid article { display: grid; align-content: start; justify-items: center; padding: clamp(34px, 4vw, 52px) clamp(24px, 3.5vw, 44px); background: #fff; }
+.trust-grid article::before { width: 52px; height: 9px; margin-bottom: 22px; background: radial-gradient(circle at center, #a57912 0 2px, #fff 2.5px 4px, transparent 4.5px), linear-gradient(90deg, transparent, #c8ad70 24%, #c8ad70 76%, transparent) center / 100% 1px no-repeat; content: ""; }
+.trust-grid h3 { margin: 0 0 12px; font-size: 24px; line-height: 1.25; }
+.trust-grid p { max-width: 310px; margin: 0 auto; color: #666; }
 .faq-section { padding: clamp(76px, 9vw, 130px) 7vw; color: var(--white); background: #111212; }
 .faq-section > .eyebrow, .faq-section > h2, .faq-list { width: min(980px, 100%); margin-left: auto; margin-right: auto; }
 .faq-section > h2 { margin-top: 0; font-family: var(--font-display); font-size: clamp(38px, 5vw, 62px); line-height: 1.04; }
@@ -249,6 +249,7 @@ textarea { min-height: 120px; resize: vertical; }
   .booking-intro { padding-bottom: 55px; }
   .hero-vehicle { width: 100%; }
   .trust-grid, .site-footer { grid-template-columns: 1fr 1fr; }
+  .trust-grid article:last-child { grid-column: 1 / -1; }
   .local-area-grid { grid-template-columns: repeat(2, 1fr); }
   .areas-intro { grid-template-columns: 1fr; }
   .quick-price-section { scroll-margin-top: 86px; }
@@ -286,6 +287,7 @@ textarea { min-height: 120px; resize: vertical; }
   .time-pair { grid-column: auto; }
   .submit-button { width: 100%; min-width: 0; }
   .trust-grid, .site-footer { grid-template-columns: 1fr; }
+  .trust-grid article:last-child { grid-column: auto; }
   .footer-bottom { grid-column: 1; }
   .footer-bottom { align-items: flex-start; flex-direction: column; gap: 10px; }
   .powered-by { text-align: left; }
