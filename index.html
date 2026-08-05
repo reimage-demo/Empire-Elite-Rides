@@ -116,12 +116,11 @@
       <div class="quick-price-heading"><p class="eyebrow">Plan your ride</p><h2 id="quick-price-title">Get a fast ride price.</h2><p>Enter your pickup, destination, and preferred time to receive a personalized ride estimate.</p></div>
       <div class="quick-price-card">
         <form id="quick-price-form" class="quick-price-form">
-          <div class="address-field"><label for="quick-pickup">Pickup address</label><input id="quick-pickup" name="pickupAddress" required placeholder="Start typing a full address" aria-describedby="quick-address-help"><div id="quick-pickup-suggestions" class="address-suggestions" role="listbox" hidden></div></div>
-          <div class="address-field"><label for="quick-dropoff">Drop-off address</label><input id="quick-dropoff" name="dropoffAddress" required placeholder="Start typing a full address" aria-describedby="quick-address-help"><div id="quick-dropoff-suggestions" class="address-suggestions" role="listbox" hidden></div></div>
+          <div class="address-field"><label for="quick-pickup">Pickup address</label><input id="quick-pickup" name="pickupAddress" required placeholder="Start typing a full address"><div id="quick-pickup-suggestions" class="address-suggestions" role="listbox" hidden></div></div>
+          <div class="address-field"><label for="quick-dropoff">Drop-off address</label><input id="quick-dropoff" name="dropoffAddress" required placeholder="Start typing a full address"><div id="quick-dropoff-suggestions" class="address-suggestions" role="listbox" hidden></div></div>
           <label for="quick-date">Pickup date<input id="quick-date" name="pickupDate" type="date" required></label>
           <label for="quick-time">Pickup time<input id="quick-time" name="pickupTime" type="time" step="1800" required></label>
           <button class="gold-button" type="submit">Get Price <span>→</span></button>
-          <small id="quick-address-help" class="quick-form-help">Choose each address from the secure suggestions.</small>
         </form>
         <p id="quick-price-status" class="quote-status" role="status" aria-live="polite"></p>
         <article id="quick-price-result" class="quick-price-result" hidden>
