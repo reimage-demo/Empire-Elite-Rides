@@ -40,6 +40,7 @@
     </section>
 
     <section class="booking-card">
+      <section id="payment-return" class="payment-return" role="status" aria-live="polite" hidden></section>
       <form id="booking-form">
         <div class="form-heading"><p>Plan your reservation</p><span>Trip details and pricing</span></div>
 
@@ -92,11 +93,11 @@
           <button id="calculate-booking-price" class="gold-button" type="button">Calculate My Price <span>→</span></button>
         </section>
 
-        <section class="reservation-submit"><p class="eyebrow">7. Reservation request</p>
-          <div class="form-data-notice"><strong>Secure reservation request</strong><p>We’ll review your trip details and availability before confirming your reservation. No online payment is required. Read our <a href="privacy.html">Privacy &amp; Data Policy</a>.</p></div>
-          <label class="consent"><input name="consent" type="checkbox" required><span>I agree to the reservation terms and authorize Empire Elite Rides to contact me about this service.</span></label>
+        <section class="reservation-submit"><p class="eyebrow">7. Reserve and pay</p>
+          <div class="form-data-notice"><strong>Secure Stripe Checkout</strong><p>Instant quotes are paid in full through Stripe’s hosted checkout. Trips requiring staff review are submitted without payment until approved. Empire Elite Rides never receives your card details. Read our <a href="privacy.html">Privacy &amp; Data Policy</a>.</p></div>
+          <label class="consent"><input name="consent" type="checkbox" required><span>I agree to the reservation terms, authorize Empire Elite Rides to contact me about this service, and understand that an instant quote is charged in full through Stripe Checkout.</span></label>
           <div id="form-message" class="form-message" role="status" aria-live="polite"></div>
-          <button id="reserve-button" class="gold-button submit-button" type="submit" disabled>Request Reservation <span>→</span></button>
+          <button id="reserve-button" class="gold-button submit-button" type="submit" disabled>Continue to Secure Payment <span>→</span></button>
         </section>
       </form>
     </section>

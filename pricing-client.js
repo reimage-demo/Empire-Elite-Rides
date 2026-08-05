@@ -45,7 +45,9 @@ export function readableDate(date, time) {
 }
 
 export function backendMessage(error, fallback) {
-  return error?.data?.message || error?.message || fallback;
+  const message = error?.data?.message || error?.message;
+  if (!message || message.includes('[CONVEX') || message.includes('Server Error')) return fallback;
+  return message;
 }
 
 export function initAddressAutocomplete(input, list, { onInvalidate, onSelect } = {}) {

@@ -12,11 +12,13 @@ if (form) {
   const quotePlaceholder = document.querySelector('#booking-quote-placeholder');
   const quoteButton = document.querySelector('#calculate-booking-price');
   const reserveButton = document.querySelector('#reserve-button');
+  const paymentReturn = document.querySelector('#payment-return');
   const stopContainer = document.querySelector('#additional-stops');
   const stopControllers = [];
   let currentQuote = null;
   let estimateId = null;
   let expirationTimer = null;
+  const pendingCheckoutKey = 'eer-pending-checkout';
 
   const pickup = initAddressAutocomplete(form.elements.pickupAddress, document.querySelector('#booking-pickup-suggestions'), { onInvalidate: invalidateQuote });
   const dropoff = initAddressAutocomplete(form.elements.dropoffAddress, document.querySelector('#booking-dropoff-suggestions'), { onInvalidate: invalidateQuote });
@@ -88,7 +90,7 @@ if (form) {
       name.textContent = line.label; value.textContent = money(line.amountCents); row.append(name, value); return row;
     }));
     quoteMessage.textContent = quote.status === 'rejected' ? 'The selected time is unavailable. Choose another pickup time.' : quote.status === 'manual_review_required' ? 'This price requires staff confirmation. You can submit the request now.' : 'Your trip details and price are ready.';
-    reserveButton.textContent = quote.status === 'manual_review_required' ? 'Submit for Confirmation →' : 'Request Reservation →';
+    reserveButton.textContent = quote.status === 'manual_review_required' ? 'Submit for Confirmation →' : `Pay ${money(quote.finalPriceCents)} Securely →`;
     reserveButton.disabled = quote.status === 'rejected';
     const expiration = quoteResult.querySelector('[data-quote-expiration]');
     const tick = () => {
@@ -97,6 +99,54 @@ if (form) {
       else expiration.textContent = `Quote expires in ${Math.floor(remaining / 60000)}:${String(Math.floor((remaining % 60000) / 1000)).padStart(2, '0')}`;
     };
     tick(); expirationTimer = window.setInterval(tick, 1000);
+  }
+
+  function validCheckoutUrl(value) {
+    try { return new URL(value).origin === 'https://checkout.stripe.com'; }
+    catch { return false; }
+  }
+
+  function showPaymentReturn(kind, title, message, checkoutUrl) {
+    paymentReturn.className = `payment-return ${kind}`;
+    paymentReturn.replaceChildren();
+    const heading = document.createElement('h2'); heading.textContent = title;
+    const copy = document.createElement('p'); copy.textContent = message;
+    paymentReturn.append(heading, copy);
+    if (checkoutUrl && validCheckoutUrl(checkoutUrl)) {
+      const link = document.createElement('a'); link.href = checkoutUrl; link.textContent = 'Return to secure checkout';
+      paymentReturn.append(link);
+    }
+    paymentReturn.hidden = false;
+  }
+
+  async function handlePaymentReturn() {
+    const params = new URLSearchParams(location.search);
+    const state = params.get('payment');
+    if (state === 'cancelled') {
+      let pending = null;
+      try { pending = JSON.parse(sessionStorage.getItem(pendingCheckoutKey) || 'null'); } catch { /* ignore invalid browser state */ }
+      showPaymentReturn('cancelled', 'Payment was canceled', 'No completed payment was recorded. You may return to the secure Stripe checkout while this reservation hold remains open.', pending?.checkoutUrl);
+      return;
+    }
+    if (state !== 'success') return;
+    const checkoutSessionId = params.get('checkout_session_id');
+    if (!checkoutSessionId) return showPaymentReturn('cancelled', 'Payment status unavailable', 'Please contact us with your Stripe receipt so we can verify the reservation.');
+    showPaymentReturn('success', 'Confirming your payment…', 'Stripe returned you safely. We are waiting for the verified payment notification.');
+    try {
+      const client = await convexClient();
+      for (let attempt = 0; attempt < 8; attempt += 1) {
+        const status = await client.query('paymentRecords:checkoutStatus', { checkoutSessionId, sessionId: customerSessionId() });
+        if (status?.paymentStatus === 'paid') {
+          sessionStorage.removeItem(pendingCheckoutKey);
+          showPaymentReturn('success', 'Payment received', `Reservation ${status.confirmationCode} is paid in full for ${money(status.amountCents)}. Our team has received it and will follow up with your service details.`);
+          return;
+        }
+        await new Promise(resolve => window.setTimeout(resolve, 1250));
+      }
+      showPaymentReturn('success', 'Payment is processing', 'Your return from Stripe was received, but only the verified Stripe notification can mark the booking paid. Refresh this page shortly or contact us if this message remains.');
+    } catch {
+      showPaymentReturn('success', 'Payment verification pending', 'We could not display the verified status yet. Keep your Stripe receipt and contact us if you need immediate confirmation.');
+    }
   }
 
   async function loadEstimate() {
@@ -151,14 +201,36 @@ if (form) {
     if (!currentQuote || currentQuote.expiresAt <= Date.now()) return showError(formMessage, 'Calculate a current official quote before continuing.');
     const details = customer();
     if (details.phone.replace(/\D/g, '').length !== 10) return showError(formMessage, 'Enter a complete 10-digit phone number.');
-    reserveButton.disabled = true; reserveButton.textContent = 'Submitting request…';
+    reserveButton.disabled = true; reserveButton.textContent = currentQuote.status === 'manual_review_required' ? 'Submitting request…' : 'Opening secure checkout…';
     try {
       const client = await convexClient();
-      const response = await client.mutation('reservations:submit', { quoteId: currentQuote.quoteId, sessionId: customerSessionId(), customer: details });
-      formMessage.className = 'form-message success';
-      formMessage.textContent = response.status === 'manual_review' ? `Request ${response.confirmationCode} was submitted for staff confirmation.` : `Request ${response.confirmationCode} was received with your quoted price. We’ll contact you to confirm.`;
-      currentQuote = null;
-    } catch (error) { showError(formMessage, backendMessage(error, 'The reservation could not be prepared. Recalculate and try again.')); reserveButton.disabled = false; }
+      if (currentQuote.status === 'manual_review_required') {
+        const response = await client.mutation('reservations:submit', { quoteId: currentQuote.quoteId, sessionId: customerSessionId(), customer: details });
+        formMessage.className = 'form-message success';
+        formMessage.textContent = `Request ${response.confirmationCode} was submitted for staff confirmation. No payment was taken.`;
+        currentQuote = null;
+      } else {
+        const response = await client.action('payments:createCheckout', {
+          quoteId: currentQuote.quoteId,
+          sessionId: customerSessionId(),
+          returnOrigin: location.origin,
+          customer: details
+        });
+        if (!validCheckoutUrl(response.checkoutUrl)) throw new Error('Stripe returned an invalid checkout address.');
+        sessionStorage.setItem(pendingCheckoutKey, JSON.stringify({
+          checkoutUrl: response.checkoutUrl,
+          checkoutSessionId: response.checkoutSessionId,
+          confirmationCode: response.confirmationCode,
+          testMode: response.testMode
+        }));
+        location.assign(response.checkoutUrl);
+      }
+    } catch (error) {
+      showError(formMessage, backendMessage(error, 'Secure payment could not be opened. Your card was not charged; please try again.'));
+      reserveButton.disabled = false;
+      reserveButton.textContent = currentQuote?.status === 'manual_review_required' ? 'Submit for Confirmation →' : currentQuote ? `Pay ${money(currentQuote.finalPriceCents)} Securely →` : 'Recalculate to Continue →';
+    }
   });
+  void handlePaymentReturn();
   loadEstimate();
 }

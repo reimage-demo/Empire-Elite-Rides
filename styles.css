@@ -139,6 +139,12 @@ img { display: block; max-width: 100%; }
 .service-note strong { color: var(--white); font-weight: 600; }
 .booking-card { padding: clamp(42px, 6vw, 90px) clamp(28px, 7vw, 110px); }
 .booking-card form { max-width: 840px; margin: auto; }
+.payment-return { max-width: 840px; margin: 0 auto 28px; padding: 22px; border-left: 4px solid var(--gold); background: #fff8e7; }
+.payment-return.success { color: #205d3b; border-color: #4c9a6d; background: #effaf3; }
+.payment-return.cancelled { color: #6f5010; }
+.payment-return h2 { margin: 0 0 8px; font-family: "Cormorant Garamond", Georgia, serif; font-size: 30px; }
+.payment-return p { margin: 0 0 12px; }
+.payment-return a { display: inline-block; padding: 11px 16px; color: #171717; background: linear-gradient(135deg,var(--gold-bright),#b98216); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; }
 .form-heading { display: flex; align-items: end; justify-content: space-between; gap: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
 .form-heading p { margin: 0; font-family: "Cormorant Garamond", Georgia, serif; font-size: 34px; font-weight: 600; }
 .form-heading span { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .15em; }
