@@ -13,6 +13,8 @@ if (form) {
   const quoteButton = document.querySelector('#calculate-booking-price');
   const reserveButton = document.querySelector('#reserve-button');
   const paymentReturn = document.querySelector('#payment-return');
+  const promotionStatus = document.querySelector('#promotion-code-status');
+  const applyPromotionButton = document.querySelector('#apply-promotion-code');
   const stopContainer = document.querySelector('#additional-stops');
   const stopControllers = [];
   let currentQuote = null;
@@ -84,6 +86,17 @@ if (form) {
     quoteResult.querySelector('[data-booking-total]').textContent = money(quote.finalPriceCents);
     const label = quoteResult.querySelector('[data-booking-quote-label]');
     label.textContent = quote.status === 'manual_review_required' ? 'Availability confirmation required' : 'Your confirmed quote';
+    const promotionLine = quoteResult.querySelector('[data-booking-promotion]');
+    if (quote.promotion && quote.discountCents > 0) {
+      promotionLine.textContent = `${quote.promotion.name}: you save ${money(quote.discountCents)}.`;
+      promotionLine.hidden = false;
+      promotionStatus.className = 'promotion-code-status success';
+      promotionStatus.textContent = quote.promotion.kind === 'code' ? `Code ${quote.promotion.code} applied.` : `${quote.promotion.name} applied automatically.`;
+    } else {
+      promotionLine.hidden = true;
+      promotionStatus.className = 'promotion-code-status';
+      promotionStatus.textContent = form.elements.promotionCode.value.trim() ? 'The entered code was not applied.' : '';
+    }
     const breakdown = quoteResult.querySelector('[data-booking-breakdown]');
     breakdown.replaceChildren(...quote.customerBreakdown.map(line => {
       const row = document.createElement('div'), name = document.createElement('dt'), value = document.createElement('dd');
@@ -99,6 +112,18 @@ if (form) {
       else expiration.textContent = `Quote expires in ${Math.floor(remaining / 60000)}:${String(Math.floor((remaining % 60000) / 1000)).padStart(2, '0')}`;
     };
     tick(); expirationTimer = window.setInterval(tick, 1000);
+  }
+
+  async function calculateQuote() {
+    quoteButton.disabled = true; applyPromotionButton.disabled = true; reserveButton.disabled = true; quoteMessage.textContent = 'Preparing your ride price…'; formMessage.textContent = '';
+    try {
+      const client = await convexClient();
+      renderQuote(await client.action('quotes:generateBookingQuote', quoteArgs()));
+    } catch (error) {
+      const message = backendMessage(error, 'We could not calculate this reservation. Review the details and try again.');
+      quoteMessage.textContent = message;
+      if (form.elements.promotionCode.value.trim()) { promotionStatus.className = 'promotion-code-status error'; promotionStatus.textContent = message; }
+    } finally { quoteButton.disabled = false; applyPromotionButton.disabled = false; }
   }
 
   function validCheckoutUrl(value) {
@@ -168,6 +193,7 @@ if (form) {
   form.elements.pickupDate.min = newYorkToday(); form.elements.pickupDate.value = newYorkToday(); form.elements.pickupTime.value = defaultTime();
   form.elements.returnDate.min = newYorkToday();
   form.elements.phone.addEventListener('input', () => { form.elements.phone.value = formatPhone(form.elements.phone.value); });
+  form.elements.promotionCode.addEventListener('input', () => { form.elements.promotionCode.value = form.elements.promotionCode.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''); });
   form.elements.tripType.addEventListener('change', () => {
     const roundTrip = form.elements.tripType.value === 'round_trip';
     document.querySelector('#return-fields').hidden = !roundTrip;
@@ -189,12 +215,8 @@ if (form) {
     invalidateQuote(); wrapper.querySelector('input').focus();
   });
 
-  quoteButton.addEventListener('click', async () => {
-    quoteButton.disabled = true; reserveButton.disabled = true; quoteMessage.textContent = 'Preparing your ride price…'; formMessage.textContent = '';
-    try { const client = await convexClient(); renderQuote(await client.action('quotes:generateBookingQuote', quoteArgs())); }
-    catch (error) { quoteMessage.textContent = backendMessage(error, 'We could not calculate this reservation. Review the details and try again.'); }
-    finally { quoteButton.disabled = false; }
-  });
+  quoteButton.addEventListener('click', calculateQuote);
+  applyPromotionButton.addEventListener('click', calculateQuote);
 
   form.addEventListener('submit', async event => {
     event.preventDefault(); formMessage.className = 'form-message'; formMessage.textContent = '';

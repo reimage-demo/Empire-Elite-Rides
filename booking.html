@@ -108,17 +108,17 @@
           <label>Flight number<input name="flightNumber" maxlength="20" placeholder="Only for airport service"></label>
           <label class="check-option"><input name="meetAndGreet" type="checkbox"><span>Meet-and-greet service</span></label>
           <label id="hourly-field" hidden>Hours requested<input name="hourlyHours" type="number" min="3" max="14" step="0.5" value="3"></label>
-          <label>Promotion code<input name="promotionCode" maxlength="30" autocomplete="off"></label>
         </div></fieldset>
 
         <section class="booking-quote" aria-labelledby="booking-price-title"><p class="eyebrow">6. Price summary</p><h2 id="booking-price-title">Your ride price</h2>
           <div id="booking-quote-placeholder"><p>Complete the route and trip details, then request your official price.</p></div>
-          <div id="booking-quote-result" hidden><strong data-booking-total></strong><p data-booking-quote-label></p><dl data-booking-breakdown></dl><p class="quote-expiration" data-quote-expiration></p></div>
+          <div id="booking-quote-result" hidden><strong data-booking-total></strong><p data-booking-quote-label></p><p class="applied-promotion" data-booking-promotion hidden></p><dl data-booking-breakdown></dl><p class="quote-expiration" data-quote-expiration></p></div>
           <p id="quote-message" class="quote-status" role="status" aria-live="polite"></p>
           <button id="calculate-booking-price" class="gold-button" type="button">Calculate My Price <span>→</span></button>
         </section>
 
         <section class="reservation-submit"><p class="eyebrow">7. Reserve and pay</p>
+          <div class="promotion-code-box"><div><strong>Have a discount code?</strong><p>Enter it before payment and recalculate your secure final price.</p></div><label for="promotion-code">Discount code<input id="promotion-code" name="promotionCode" maxlength="30" autocomplete="off" placeholder="ELITE-XXXXXXX"></label><button id="apply-promotion-code" class="inline-action" type="button">Apply code</button><p id="promotion-code-status" role="status" aria-live="polite"></p></div>
           <div class="form-data-notice"><strong>Secure Stripe Checkout</strong><p>Instant quotes are paid in full through Stripe’s hosted checkout. Trips requiring staff review are submitted without payment until approved. Empire Elite Rides never receives your card details. Read our <a href="privacy.html">Privacy &amp; Data Policy</a>.</p></div>
           <label class="consent"><input name="consent" type="checkbox" required><span>I agree to the reservation terms, authorize Empire Elite Rides to contact me about this service, and understand that an instant quote is charged in full through Stripe Checkout.</span></label>
           <div id="form-message" class="form-message" role="status" aria-live="polite"></div>
