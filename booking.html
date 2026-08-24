@@ -7,6 +7,7 @@
   <meta name="robots" content="index, follow, max-image-preview:large">
   <meta name="theme-color" content="#090a0b">
   <link rel="icon" href="assets/images/branding/empire-elite-icon.png" type="image/png">
+  <link rel="apple-touch-icon" href="assets/images/branding/empire-elite-apple-touch-icon.png">
   <link rel="manifest" href="site.webmanifest">
   <link rel="canonical" href="https://empireeliterides.com/booking.html">
   <meta property="og:type" content="website">
@@ -23,7 +24,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&amp;family=Montserrat:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body class="booking-page">
   <header class="site-header">
     <a class="brand" href="index.html" aria-label="Empire Elite Rides home"><span class="brand-mark" aria-hidden="true"><img src="assets/images/branding/empire-elite-nav-logo.png" alt=""></span><span class="brand-name"><span>Empire</span><span><strong>Elite</strong> Rides</span></span></a>
     <button class="menu-toggle" type="button" aria-label="Open navigation" aria-expanded="false"><span></span><span></span><span></span></button>
@@ -34,99 +35,126 @@
     <section class="booking-intro">
       <p class="eyebrow">Private chauffeur service</p>
       <h1>Where may we take you?</h1>
-      <p>Tell us about your trip, review your ride price, and send your reservation request to our team.</p>
-      <div class="service-note"><span>01</span><p><strong>One exclusive vehicle.</strong><br>Every reservation includes our black 2017 Ford Expedition Limited.</p></div>
-      <div class="service-note"><span>02</span><p><strong>Prepared for your arrival.</strong><br>The Expedition is washed, detailed, and readied before every scheduled service.</p></div>
+      <p>Build your trip one simple step at a time. Your details stay in place as you move forward or back.</p>
+      <button class="install-app-trigger" type="button" data-open-install><img src="assets/images/branding/empire-elite-icon.png" alt=""> Add to Home Screen</button>
     </section>
 
     <section class="booking-card">
       <section id="payment-return" class="payment-return" role="status" aria-live="polite" hidden></section>
       <form id="booking-form">
-        <div class="form-heading"><p>Plan your reservation</p><span>Your details, trip details and pricing</span></div>
+        <input name="eventType" type="hidden" value="Private ride">
+        <header class="booking-flow-header">
+          <div><span data-step-count>Step 1 of 5</span><strong data-step-name>Route</strong></div>
+          <div class="booking-progress" role="progressbar" aria-label="Booking progress" aria-valuemin="1" aria-valuemax="5" aria-valuenow="1">
+            <span class="active"></span><span></span><span></span><span></span><span></span>
+          </div>
+        </header>
 
-        <fieldset><legend>1. Customer information</legend><div class="form-grid two">
-          <label>Full name *<input name="fullName" autocomplete="name" required maxlength="100" placeholder="Your full name"></label>
-          <label>Email address *<input name="email" type="email" autocomplete="email" required placeholder="you@example.com"></label>
-          <label>Phone number *<input name="phone" type="tel" inputmode="numeric" autocomplete="tel" required maxlength="12" placeholder="860-326-1089"><small class="field-hint">Numbers format automatically</small></label>
-          <label>Preferred contact *<select name="contactMethod" required><option value="text">Text message</option><option value="call">Phone call</option><option value="email">Email</option></select></label>
-        </div><label class="full-label">Special instructions<textarea name="notes" maxlength="1000" placeholder="Airline, planned itinerary, accessibility needs, or other details"></textarea></label></fieldset>
-
-        <fieldset><legend>2. Trip details</legend><div class="form-grid two">
-          <div class="address-field"><label for="booking-pickup">Pickup address *</label><input id="booking-pickup" name="pickupAddress" required placeholder="Start typing a full address" aria-describedby="booking-address-help"><div id="booking-pickup-suggestions" class="address-suggestions" role="listbox" hidden></div></div>
-          <div class="address-field"><label for="booking-dropoff">Drop-off address *</label><input id="booking-dropoff" name="dropoffAddress" required placeholder="Start typing a full address" aria-describedby="booking-address-help"><div id="booking-dropoff-suggestions" class="address-suggestions" role="listbox" hidden></div></div>
-          <label>Service type *<select name="tripType" required><option value="one_way">One-way trip</option><option value="round_trip">Round trip</option><option value="hourly">Hourly chauffeur service</option></select></label>
-          <label>Occasion *<select name="eventType" required aria-label="Occasion"><option value="">Choose an occasion</option></select></label>
-          <small id="booking-address-help" class="availability-hint">Choose each address from the suggestions. If you edit an address, select the updated result again.</small>
-        </div>
-        <div id="additional-stops" class="dynamic-fields"></div><button id="add-stop" class="inline-action" type="button">+ Add a stop</button>
-        </fieldset>
-
-        <fieldset><legend>3. Date and time</legend><div class="form-grid two">
-          <label>Pickup date *<input name="pickupDate" type="date" required></label>
-          <label for="booking-pickup-time">Pickup time *<select id="booking-pickup-time" name="pickupTime" required>
-            <option value="00:00">12:00 AM</option><option value="00:30">12:30 AM</option>
-            <option value="01:00">1:00 AM</option><option value="01:30">1:30 AM</option>
-            <option value="02:00">2:00 AM</option><option value="02:30">2:30 AM</option>
-            <option value="03:00">3:00 AM</option><option value="03:30">3:30 AM</option>
-            <option value="04:00">4:00 AM</option><option value="04:30">4:30 AM</option>
-            <option value="05:00">5:00 AM</option><option value="05:30">5:30 AM</option>
-            <option value="06:00">6:00 AM</option><option value="06:30">6:30 AM</option>
-            <option value="07:00">7:00 AM</option><option value="07:30">7:30 AM</option>
-            <option value="08:00">8:00 AM</option><option value="08:30">8:30 AM</option>
-            <option value="09:00">9:00 AM</option><option value="09:30">9:30 AM</option>
-            <option value="10:00">10:00 AM</option><option value="10:30">10:30 AM</option>
-            <option value="11:00">11:00 AM</option><option value="11:30">11:30 AM</option>
-            <option value="12:00">12:00 PM</option><option value="12:30">12:30 PM</option>
-            <option value="13:00">1:00 PM</option><option value="13:30">1:30 PM</option>
-            <option value="14:00">2:00 PM</option><option value="14:30">2:30 PM</option>
-            <option value="15:00">3:00 PM</option><option value="15:30">3:30 PM</option>
-            <option value="16:00">4:00 PM</option><option value="16:30">4:30 PM</option>
-            <option value="17:00">5:00 PM</option><option value="17:30">5:30 PM</option>
-            <option value="18:00">6:00 PM</option><option value="18:30">6:30 PM</option>
-            <option value="19:00">7:00 PM</option><option value="19:30">7:30 PM</option>
-            <option value="20:00">8:00 PM</option><option value="20:30">8:30 PM</option>
-            <option value="21:00">9:00 PM</option><option value="21:30">9:30 PM</option>
-            <option value="22:00">10:00 PM</option><option value="22:30">10:30 PM</option>
-            <option value="23:00">11:00 PM</option><option value="23:30">11:30 PM</option>
-          </select></label>
-        </div></fieldset>
-
-        <fieldset id="return-fields" hidden><legend>Return trip</legend><div class="form-grid two">
-          <div class="address-field"><label for="return-pickup">Return pickup address *</label><input id="return-pickup" name="returnPickupAddress" placeholder="Start typing a full address"><div id="return-pickup-suggestions" class="address-suggestions" role="listbox" hidden></div></div>
-          <div class="address-field"><label for="return-dropoff">Final drop-off address *</label><input id="return-dropoff" name="returnDropoffAddress" placeholder="Start typing a full address"><div id="return-dropoff-suggestions" class="address-suggestions" role="listbox" hidden></div></div>
-          <label>Return date *<input name="returnDate" type="date"></label><label>Return time *<input name="returnTime" type="time" step="1800"></label>
-        </div></fieldset>
-
-        <fieldset><legend>4. Passenger details</legend><div class="form-grid two">
-          <label>Passengers *<input name="passengerCount" type="number" min="1" max="7" value="1" required></label>
-          <label>Luggage pieces *<input name="luggageCount" type="number" min="0" max="12" value="0" required></label>
-        </div></fieldset>
-
-        <fieldset><legend>5. Additional services</legend><div class="form-grid two">
-          <label>Requested waiting time<select name="requestedWaitMinutes"><option value="0">No waiting requested</option><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">1 hour</option><option value="90">1½ hours</option><option value="120">2 hours</option></select></label>
-          <label>Airport service<select name="airportService"><option value="none">No</option><option value="pickup">Airport pickup</option><option value="dropoff">Airport drop-off</option></select></label>
-          <label>Flight number<input name="flightNumber" maxlength="20" placeholder="Only for airport service"></label>
-          <label class="check-option"><input name="meetAndGreet" type="checkbox"><span>Meet-and-greet service</span></label>
-          <label id="hourly-field" hidden>Hours requested<input name="hourlyHours" type="number" min="3" max="14" step="0.5" value="3"></label>
-        </div></fieldset>
-
-        <section class="booking-quote" aria-labelledby="booking-price-title"><p class="eyebrow">6. Price summary</p><h2 id="booking-price-title">Your ride price</h2>
-          <div id="booking-quote-placeholder"><p>Complete the route and trip details, then request your official price.</p></div>
-          <div id="booking-quote-result" hidden><strong data-booking-total></strong><p data-booking-quote-label></p><p class="applied-promotion" data-booking-promotion hidden></p><dl data-booking-breakdown></dl><p class="quote-expiration" data-quote-expiration></p></div>
-          <p id="quote-message" class="quote-status" role="status" aria-live="polite"></p>
-          <button id="calculate-booking-price" class="gold-button" type="button">Calculate My Price <span>→</span></button>
+        <section class="booking-step" data-booking-step="0" aria-labelledby="booking-step-route">
+          <div class="booking-step-heading"><p class="eyebrow">Your route</p><h2 id="booking-step-route" tabindex="-1">Where are you going?</h2><p>Start with the two addresses for this ride.</p></div>
+          <fieldset><legend>Route details</legend><div class="form-grid two">
+            <div class="address-field"><label for="booking-pickup">Pickup address *</label><input id="booking-pickup" name="pickupAddress" required placeholder="Start typing a full address"><div id="booking-pickup-suggestions" class="address-suggestions" role="listbox" hidden></div></div>
+            <div class="address-field"><label for="booking-dropoff">Drop-off address *</label><input id="booking-dropoff" name="dropoffAddress" required placeholder="Start typing a full address"><div id="booking-dropoff-suggestions" class="address-suggestions" role="listbox" hidden></div></div>
+            <label>Service type *<select name="tripType" required><option value="one_way">One-way trip</option><option value="round_trip">Round trip — save 15%</option><option value="hourly">Hourly chauffeur service</option></select></label>
+            <p class="roundtrip-savings-note"><strong>Save 15% with a return trip.</strong> Select Round trip now or add a return date on the next step.</p>
+          </div>
+          <div id="additional-stops" class="dynamic-fields"></div><button id="add-stop" class="inline-action" type="button">+ Add a stop</button>
+          </fieldset>
+          <p class="step-message" data-step-message role="status" aria-live="polite"></p>
+          <div class="booking-step-actions"><button class="gold-button" type="button" data-step-next>Continue <span>→</span></button></div>
         </section>
 
-        <section class="reservation-submit"><p class="eyebrow">7. Reserve and pay</p>
-          <div class="promotion-code-box"><div><strong>Have a discount code?</strong><p>Enter it before payment and recalculate your secure final price.</p></div><label for="promotion-code">Discount code<input id="promotion-code" name="promotionCode" maxlength="30" autocomplete="off" placeholder="ELITE-XXXXXXX"></label><button id="apply-promotion-code" class="inline-action" type="button">Apply code</button><p id="promotion-code-status" role="status" aria-live="polite"></p></div>
-          <div class="form-data-notice"><strong>Secure Stripe Checkout</strong><p>Instant quotes are paid in full through Stripe’s hosted checkout. Trips requiring staff review are submitted without payment until approved. Empire Elite Rides never receives your card details. Read our <a href="privacy.html">Privacy &amp; Data Policy</a>.</p></div>
-          <label class="consent"><input name="consent" type="checkbox" required><span>I agree to the reservation terms, authorize Empire Elite Rides to contact me about this service, and understand that an instant quote is charged in full through Stripe Checkout.</span></label>
-          <div id="form-message" class="form-message" role="status" aria-live="polite"></div>
-          <button id="reserve-button" class="gold-button submit-button" type="submit" disabled>Continue to Secure Payment <span>→</span></button>
+        <section class="booking-step" data-booking-step="1" aria-labelledby="booking-step-schedule" hidden>
+          <div class="booking-step-heading"><p class="eyebrow">Your schedule</p><h2 id="booking-step-schedule" tabindex="-1">When should we arrive?</h2><p>Select your pickup date and time. Add a return only if you need one.</p></div>
+          <fieldset><legend>Date and time</legend><div class="form-grid two">
+            <div class="date-range-control booking-date-range" data-booking-date-range>
+              <label for="booking-date-display">Pickup date *<input id="booking-date-display" class="date-range-display" type="text" placeholder="Select date" readonly aria-haspopup="dialog" aria-controls="booking-range-calendar" aria-expanded="false"></label>
+              <button class="add-dropoff-date" type="button" data-add-dropoff-date aria-expanded="false"><span aria-hidden="true">+</span> Add a return date — save 15%</button>
+              <div class="optional-date-field" data-dropoff-date-field hidden>
+                <div><label for="booking-dropoff-date-display">Drop-off date</label><button type="button" data-remove-dropoff-date>Remove</button></div>
+                <input id="booking-dropoff-date-display" class="date-range-display" type="text" placeholder="Select date" readonly aria-haspopup="dialog" aria-controls="booking-range-calendar" aria-expanded="false">
+              </div>
+              <input name="pickupDate" type="hidden">
+              <input name="returnDate" type="hidden">
+              <div id="booking-range-calendar" class="range-calendar" role="dialog" aria-modal="false" aria-labelledby="booking-range-calendar-title" hidden>
+                <div class="range-calendar-top"><div><strong id="booking-range-calendar-title">Select your dates</strong><span data-calendar-instruction>Choose a pickup date.</span></div><button class="range-calendar-close" type="button" aria-label="Close calendar">×</button></div>
+                <div class="range-calendar-nav"><button type="button" data-calendar-previous aria-label="Previous month">←</button><span data-calendar-period></span><button type="button" data-calendar-next aria-label="Next month">→</button></div>
+                <div class="range-calendar-months" data-calendar-months></div>
+                <div class="range-calendar-actions"><button type="button" data-calendar-cancel>Cancel</button><button type="button" data-calendar-apply><span aria-hidden="true">✓</span> Apply date</button></div>
+              </div>
+            </div>
+            <label>Pickup time *<input name="pickupTime" type="time" step="1800" required></label>
+          </div></fieldset>
+          <div id="return-fields" class="return-trip-fields" hidden><h3>Return trip details</h3><div class="form-grid two">
+            <div class="address-field"><label for="return-pickup">Return pickup address *</label><input id="return-pickup" name="returnPickupAddress" placeholder="Start typing a full address"><div id="return-pickup-suggestions" class="address-suggestions" role="listbox" hidden></div></div>
+            <div class="address-field"><label for="return-dropoff">Final drop-off address *</label><input id="return-dropoff" name="returnDropoffAddress" placeholder="Start typing a full address"><div id="return-dropoff-suggestions" class="address-suggestions" role="listbox" hidden></div></div>
+            <label>Return time *<input name="returnTime" type="time" step="1800"></label>
+          </div></div>
+          <p class="step-message" data-step-message role="status" aria-live="polite"></p>
+          <div class="booking-step-actions"><button class="step-back" type="button" data-step-back>← Back</button><button class="gold-button" type="button" data-step-next>Continue <span>→</span></button></div>
+        </section>
+
+        <section class="booking-step" data-booking-step="2" aria-labelledby="booking-step-ride" hidden>
+          <div class="booking-step-heading"><p class="eyebrow">Optional details</p><h2 id="booking-step-ride" tabindex="-1">Anything else for the ride?</h2><p>Passenger, luggage, airport, and waiting details are optional. Skip this screen if you do not need them.</p></div>
+          <fieldset><legend>Passengers and luggage</legend><div class="form-grid two">
+            <label>Passengers *<input name="passengerCount" type="number" min="1" max="7" value="1" required></label>
+            <label>Luggage pieces *<input name="luggageCount" type="number" min="0" max="12" value="0" required></label>
+          </div></fieldset>
+          <fieldset><legend>Optional services</legend><div class="form-grid two">
+            <label>Requested waiting time<select name="requestedWaitMinutes"><option value="0">No waiting requested</option><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">1 hour</option><option value="90">1½ hours</option><option value="120">2 hours</option></select></label>
+            <label>Airport service<select name="airportService"><option value="none">No</option><option value="pickup">Airport pickup</option><option value="dropoff">Airport drop-off</option></select></label>
+            <label data-airport-detail hidden>Flight number<input name="flightNumber" maxlength="20" placeholder="Optional flight number"></label>
+            <label class="check-option" data-airport-detail hidden><input name="meetAndGreet" type="checkbox"><span>Meet-and-greet service</span></label>
+            <label id="hourly-field" hidden>Hours requested<input name="hourlyHours" type="number" min="3" max="14" step="0.5" value="3"></label>
+          </div></fieldset>
+          <p class="step-message" data-step-message role="status" aria-live="polite"></p>
+          <div class="booking-step-actions"><button class="step-back" type="button" data-step-back>← Back</button><button class="step-skip" type="button" data-step-skip>Skip optional details</button><button class="gold-button" type="button" data-step-next>Continue <span>→</span></button></div>
+        </section>
+
+        <section class="booking-step" data-booking-step="3" aria-labelledby="booking-step-contact" hidden>
+          <div class="booking-step-heading"><p class="eyebrow">Your contact details</p><h2 id="booking-step-contact" tabindex="-1">How can we reach you?</h2><p>We use this information only to manage your ride.</p></div>
+          <fieldset><legend>Customer information</legend><div class="form-grid two">
+            <label>Full name *<input name="fullName" autocomplete="name" required maxlength="100" placeholder="Your full name"></label>
+            <label>Email address *<input name="email" type="email" autocomplete="email" required placeholder="you@example.com"></label>
+            <label>Phone number *<input name="phone" type="tel" inputmode="numeric" autocomplete="tel" required maxlength="12" placeholder="860-326-1089"><small class="field-hint">Numbers format automatically</small></label>
+            <label>Preferred contact *<select name="contactMethod" required><option value="text">Text message</option><option value="call">Phone call</option><option value="email">Email</option></select></label>
+          </div></fieldset>
+          <p class="step-message" data-step-message role="status" aria-live="polite"></p>
+          <div class="booking-step-actions"><button class="step-back" type="button" data-step-back>← Back</button><button class="gold-button" type="button" data-step-next>Review My Ride <span>→</span></button></div>
+        </section>
+
+        <section class="booking-step booking-review-step" data-booking-step="4" aria-labelledby="booking-step-review" hidden>
+          <div class="booking-step-heading"><p class="eyebrow">Review and pay</p><h2 id="booking-step-review" tabindex="-1">Your ride is almost ready.</h2><p>We’ll calculate your official price from the details you provided.</p></div>
+          <section class="booking-quote" aria-labelledby="booking-price-title"><p class="eyebrow">Official price</p><h2 id="booking-price-title">Your ride price</h2>
+            <div id="booking-quote-placeholder"><p>Preparing your official price…</p></div>
+            <div id="booking-quote-result" hidden><strong data-booking-total></strong><p data-booking-quote-label></p><p class="applied-promotion" data-booking-promotion hidden></p><dl data-booking-breakdown></dl><p class="quote-expiration" data-quote-expiration></p></div>
+            <p id="quote-message" class="quote-status" role="status" aria-live="polite"></p>
+            <button id="calculate-booking-price" class="gold-button" type="button">Recalculate Price <span>↻</span></button>
+          </section>
+          <section class="reservation-submit">
+            <div class="promotion-code-box"><div><strong>Have a discount code?</strong><p>Enter it before payment and recalculate your final price.</p></div><label for="promotion-code">Discount code<input id="promotion-code" name="promotionCode" maxlength="30" autocomplete="off" placeholder="ELITE-XXXXXXX"></label><button id="apply-promotion-code" class="inline-action" type="button">Apply code</button><p id="promotion-code-status" role="status" aria-live="polite"></p></div>
+            <label class="final-notes">Notes <span>Optional</span><textarea name="notes" maxlength="1000" placeholder="Flight number, accessibility needs, or anything else we should know"></textarea></label>
+            <div class="form-data-notice"><strong>Secure Stripe Checkout</strong><p>Instant quotes are paid in full through Stripe’s hosted checkout. Trips requiring staff review are submitted without payment until approved. Empire Elite Rides never receives your card details. Read our <a href="privacy.html">Privacy &amp; Data Policy</a>.</p></div>
+            <label class="consent"><input name="consent" type="checkbox" required><span>I agree to the reservation terms, authorize Empire Elite Rides to contact me about this service, and understand that an instant quote is charged in full through Stripe Checkout.</span></label>
+            <div id="form-message" class="form-message" role="status" aria-live="polite"></div>
+            <div class="booking-step-actions final"><button class="step-back" type="button" data-step-back>← Back</button><button id="reserve-button" class="gold-button submit-button" type="submit" disabled>Continue to Secure Payment <span>→</span></button></div>
+          </section>
         </section>
       </form>
     </section>
   </main>
+  <div class="install-app-overlay" data-install-app hidden>
+    <section class="install-app-prompt" role="dialog" aria-modal="true" aria-labelledby="install-app-title">
+      <button class="install-app-close" type="button" data-install-dismiss aria-label="Close add-to-home-screen prompt">×</button>
+      <img src="assets/images/branding/empire-elite-icon.png" alt="">
+      <p class="eyebrow">Faster next time</p>
+      <h2 id="install-app-title">Add Elite Rides to your home screen</h2>
+      <p>Open booking like an app—one tap from your phone, with no download or account required.</p>
+      <p class="install-app-help" data-install-help hidden></p>
+      <button class="gold-button" type="button" data-install-confirm>Add to Home Screen <span>+</span></button>
+      <button class="install-app-later" type="button" data-install-dismiss>Not now</button>
+    </section>
+  </div>
   <footer class="site-footer">
     <div class="footer-brand"><img src="assets/images/branding/empire-elite-logo.png" alt="Empire Elite Rides"><p>Private luxury chauffeur service across Albany, Rensselaer and Saratoga counties, Glens Falls, Lake George, and the Capital Region.</p></div>
     <div class="footer-column"><p class="footer-title">Explore</p><a href="index.html">Home</a><a href="service-areas.html">Service Areas</a><a href="booking.html">Book Now</a><a href="index.html#faq">FAQs</a></div>

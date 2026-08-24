@@ -54,6 +54,7 @@ export function initAddressAutocomplete(input, list, { onInvalidate, onSelect } 
   let selected = null;
   let requestNumber = 0;
   let newestRenderedRequest = 0;
+  let blurTimer;
   input.setAttribute('autocomplete', 'off');
   input.setAttribute('aria-autocomplete', 'list');
   input.setAttribute('aria-controls', list.id);
@@ -89,7 +90,14 @@ export function initAddressAutocomplete(input, list, { onInvalidate, onSelect } 
     input.setAttribute('aria-expanded', 'false');
   }
 
+  function cancelPendingRequests() {
+    requestNumber += 1;
+    newestRenderedRequest = requestNumber;
+  }
+
   function setSelection(next) {
+    window.clearTimeout(blurTimer);
+    cancelPendingRequests();
     selected = next;
     input.value = next?.address || '';
     input.dataset.validated = next ? 'true' : 'false';
@@ -126,8 +134,12 @@ export function initAddressAutocomplete(input, list, { onInvalidate, onSelect } 
       if (currentRequest === requestNumber) clearList();
     }
   });
+  input.addEventListener('focus', () => window.clearTimeout(blurTimer));
   input.addEventListener('focus', warmPricingClient, { once: true });
-  input.addEventListener('blur', () => window.setTimeout(clearList, 150));
+  input.addEventListener('blur', () => {
+    cancelPendingRequests();
+    blurTimer = window.setTimeout(clearList, 150);
+  });
   input.addEventListener('keydown', event => {
     const options = [...list.querySelectorAll('button')];
     if (event.key === 'ArrowDown' && options.length) { event.preventDefault(); options[0].focus(); }

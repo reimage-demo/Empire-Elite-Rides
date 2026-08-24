@@ -3,7 +3,6 @@ import { backendMessage, convexClient, customerSessionId, initAddressAutocomplet
 warmPricingClient();
 
 const form = document.querySelector('#booking-form');
-const OCCASIONS = ['Airport Transportation', 'Corporate Travel', 'Weddings', 'Special Events', 'Nights Out', 'Personal Chauffeur', 'Family Travel', 'Long-Distance Travel', 'Medical & Professional', 'Funeral Services'];
 
 if (form) {
   const quoteMessage = document.querySelector('#quote-message');
@@ -17,6 +16,39 @@ if (form) {
   const applyPromotionButton = document.querySelector('#apply-promotion-code');
   const stopContainer = document.querySelector('#additional-stops');
   const stopControllers = [];
+  const bookingDateRange = form.querySelector('[data-booking-date-range]');
+  const bookingPickupDateDisplay = document.querySelector('#booking-date-display');
+  const bookingDropoffDateDisplay = document.querySelector('#booking-dropoff-date-display');
+  const bookingAddDropoffDate = bookingDateRange.querySelector('[data-add-dropoff-date]');
+  const bookingRemoveDropoffDate = bookingDateRange.querySelector('[data-remove-dropoff-date]');
+  const bookingDropoffDateField = bookingDateRange.querySelector('[data-dropoff-date-field]');
+  const bookingCalendar = document.querySelector('#booking-range-calendar');
+  const bookingCalendarMonths = bookingCalendar.querySelector('[data-calendar-months]');
+  const bookingCalendarPeriod = bookingCalendar.querySelector('[data-calendar-period]');
+  const bookingCalendarInstruction = bookingCalendar.querySelector('[data-calendar-instruction]');
+  const bookingPreviousMonth = bookingCalendar.querySelector('[data-calendar-previous]');
+  const bookingNextMonth = bookingCalendar.querySelector('[data-calendar-next]');
+  const bookingApplyDates = bookingCalendar.querySelector('[data-calendar-apply]');
+  const bookingCancelDates = bookingCalendar.querySelector('[data-calendar-cancel]');
+  const bookingSteps = [...form.querySelectorAll('[data-booking-step]')];
+  const bookingProgress = form.querySelector('.booking-progress');
+  const bookingProgressSegments = [...bookingProgress.querySelectorAll('span')];
+  const bookingStepCount = form.querySelector('[data-step-count]');
+  const bookingStepName = form.querySelector('[data-step-name]');
+  const bookingStepNames = ['Route', 'Schedule', 'Optional details', 'Contact', 'Review & pay'];
+  const bookingMonthFormatter = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' });
+  const bookingDateFormatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const bookingLongDateFormatter = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  const bookingWeekdays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+  let bookingCommittedStart = '';
+  let bookingCommittedEnd = '';
+  let bookingDraftStart = '';
+  let bookingDraftEnd = '';
+  let bookingDropoffEnabled = false;
+  let bookingVisibleMonth;
+  let bookingSelectionMode = 'start';
+  let bookingCalendarTrigger = bookingPickupDateDisplay;
+  let currentBookingStep = 0;
   let currentQuote = null;
   let estimateId = null;
   let expirationTimer = null;
@@ -35,6 +67,99 @@ if (form) {
     const minutes = Math.ceil((Number(parts.hour) * 60 + Number(parts.minute) + 60) / 30) * 30;
     return minutes < 1440 ? `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}` : '09:00';
   }
+  function bookingDateFromIso(value) {
+    const [year, month, day] = value.split('-').map(Number);
+    return new Date(year, month - 1, day, 12);
+  }
+  function bookingIsoFromDate(date) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  }
+  function bookingMonthStart(date) { return new Date(date.getFullYear(), date.getMonth(), 1, 12); }
+  function addBookingMonths(date, amount) { return new Date(date.getFullYear(), date.getMonth() + amount, 1, 12); }
+  function syncBookingDateInputs(notify = false) {
+    form.elements.pickupDate.value = bookingCommittedStart;
+    form.elements.returnDate.value = bookingDropoffEnabled ? bookingCommittedEnd : '';
+    bookingPickupDateDisplay.value = bookingCommittedStart ? bookingDateFormatter.format(bookingDateFromIso(bookingCommittedStart)) : '';
+    bookingDropoffDateDisplay.value = bookingDropoffEnabled && bookingCommittedEnd ? bookingDateFormatter.format(bookingDateFromIso(bookingCommittedEnd)) : '';
+    if (notify) invalidateQuote();
+  }
+  function syncBookingDropoffUi() {
+    bookingAddDropoffDate.hidden = bookingDropoffEnabled;
+    bookingAddDropoffDate.setAttribute('aria-expanded', String(bookingDropoffEnabled));
+    bookingDropoffDateField.hidden = !bookingDropoffEnabled;
+  }
+  function renderBookingMonth(monthDate, minimumDate) {
+    const section = document.createElement('section'); section.className = 'range-calendar-month';
+    const heading = document.createElement('h3'); heading.textContent = bookingMonthFormatter.format(monthDate);
+    const weekdays = document.createElement('div'); weekdays.className = 'range-calendar-weekdays';
+    weekdays.replaceChildren(...bookingWeekdays.map(name => { const label = document.createElement('span'); label.textContent = name; return label; }));
+    const days = document.createElement('div'); days.className = 'range-calendar-days';
+    for (let blank = 0; blank < monthDate.getDay(); blank += 1) { const space = document.createElement('span'); space.className = 'range-calendar-blank'; days.append(space); }
+    const daysInMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0).getDate();
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      const date = new Date(monthDate.getFullYear(), monthDate.getMonth(), day, 12), iso = bookingIsoFromDate(date);
+      const button = document.createElement('button'); button.type = 'button'; button.className = 'range-calendar-day'; button.textContent = String(day);
+      button.setAttribute('aria-label', bookingLongDateFormatter.format(date));
+      button.disabled = iso < minimumDate || (bookingDropoffEnabled && bookingSelectionMode === 'end' && bookingDraftStart && iso < bookingDraftStart);
+      if (iso === minimumDate) button.classList.add('today');
+      if (bookingDraftStart && bookingDraftEnd && iso > bookingDraftStart && iso < bookingDraftEnd) button.classList.add('in-range');
+      if (iso === bookingDraftStart) { button.classList.add('range-start'); button.setAttribute('aria-selected', 'true'); }
+      if (iso === bookingDraftEnd) { button.classList.add('range-end'); button.setAttribute('aria-selected', 'true'); }
+      button.addEventListener('click', () => selectBookingDate(iso));
+      days.append(button);
+    }
+    section.append(heading, weekdays, days); return section;
+  }
+  function renderBookingCalendar() {
+    const minimumDate = newYorkToday(), secondMonth = addBookingMonths(bookingVisibleMonth, 1);
+    bookingCalendarMonths.replaceChildren(renderBookingMonth(bookingVisibleMonth, minimumDate), renderBookingMonth(secondMonth, minimumDate));
+    bookingCalendarPeriod.textContent = `${bookingMonthFormatter.format(bookingVisibleMonth)} – ${bookingMonthFormatter.format(secondMonth)}`;
+    bookingPreviousMonth.disabled = bookingVisibleMonth <= bookingMonthStart(bookingDateFromIso(minimumDate));
+    const complete = Boolean(bookingDraftStart && (!bookingDropoffEnabled || bookingDraftEnd));
+    bookingCalendarInstruction.textContent = !bookingDraftStart ? 'Choose your pickup date.' : bookingDropoffEnabled && !bookingDraftEnd ? 'Choose your drop-off date.' : `Date${bookingDropoffEnabled ? 's' : ''} selected. Press ✓ Apply to confirm.`;
+    bookingApplyDates.disabled = !complete;
+    bookingApplyDates.innerHTML = `<span aria-hidden="true">✓</span> Apply date${bookingDropoffEnabled ? 's' : ''}`;
+  }
+  function closeBookingCalendar(restoreFocus = false) {
+    if (bookingCalendar.hidden) return;
+    bookingCalendar.hidden = true;
+    bookingPickupDateDisplay.setAttribute('aria-expanded', 'false');
+    bookingDropoffDateDisplay.setAttribute('aria-expanded', 'false');
+    if (restoreFocus) bookingCalendarTrigger.focus();
+  }
+  function openBookingCalendar(mode, trigger) {
+    bookingSelectionMode = mode; bookingCalendarTrigger = trigger;
+    bookingDraftStart = bookingCommittedStart; bookingDraftEnd = bookingDropoffEnabled ? bookingCommittedEnd : '';
+    const anchor = mode === 'end' && bookingDraftEnd ? bookingDraftEnd : bookingDraftStart || newYorkToday();
+    bookingVisibleMonth = bookingMonthStart(bookingDateFromIso(anchor));
+    renderBookingCalendar(); bookingCalendar.hidden = false;
+    bookingPickupDateDisplay.setAttribute('aria-expanded', String(trigger === bookingPickupDateDisplay));
+    bookingDropoffDateDisplay.setAttribute('aria-expanded', String(trigger === bookingDropoffDateDisplay));
+  }
+  function selectBookingDate(iso) {
+    if (bookingSelectionMode === 'start') {
+      bookingDraftStart = iso; bookingDraftEnd = '';
+      if (bookingDropoffEnabled) bookingSelectionMode = 'end';
+      renderBookingCalendar(); return;
+    }
+    if (!bookingDraftStart || iso < bookingDraftStart) { bookingDraftStart = iso; bookingDraftEnd = ''; bookingSelectionMode = 'end'; renderBookingCalendar(); return; }
+    bookingDraftEnd = iso; renderBookingCalendar();
+  }
+  function applyBookingDates() {
+    if (!bookingDraftStart || (bookingDropoffEnabled && !bookingDraftEnd)) return;
+    bookingCommittedStart = bookingDraftStart; bookingCommittedEnd = bookingDropoffEnabled ? bookingDraftEnd : '';
+    syncBookingDateInputs(true); closeBookingCalendar();
+  }
+  function setBookingDates(pickupDate, dropoffDate = '', notify = false) {
+    bookingCommittedStart = pickupDate || newYorkToday(); bookingCommittedEnd = dropoffDate;
+    bookingDropoffEnabled = Boolean(dropoffDate); bookingVisibleMonth = bookingMonthStart(bookingDateFromIso(bookingCommittedStart));
+    syncBookingDropoffUi(); syncBookingDateInputs(notify);
+  }
+  function setBookingDropoffEnabled(enabled, notify = false) {
+    bookingDropoffEnabled = enabled;
+    if (!enabled) bookingCommittedEnd = '';
+    syncBookingDropoffUi(); syncBookingDateInputs(notify);
+  }
   function formatPhone(value) {
     const digits = value.replace(/\D/g, '').slice(0, 10);
     if (digits.length <= 3) return digits;
@@ -50,6 +175,74 @@ if (form) {
     quotePlaceholder.querySelector('p').textContent = 'Trip details changed. Calculate an updated official price.';
     reserveButton.disabled = true;
     quoteMessage.textContent = '';
+  }
+  function setStepMessage(step, message = '') {
+    step.querySelector('[data-step-message]')?.replaceChildren(message);
+  }
+  function firstInvalidControl(step) {
+    return [...step.querySelectorAll('input, select, textarea')].find(control => control.type !== 'hidden' && !control.disabled && !control.checkValidity());
+  }
+  function validateBookingStep(index) {
+    const step = bookingSteps[index];
+    setStepMessage(step);
+    if (index === 1 && (!bookingCommittedStart || (bookingDropoffEnabled && !bookingCommittedEnd))) {
+      setStepMessage(step, bookingDropoffEnabled ? 'Choose and apply the drop-off date before continuing.' : 'Choose and apply the pickup date before continuing.');
+      openBookingCalendar(bookingDropoffEnabled && bookingCommittedStart ? 'end' : 'start', bookingDropoffEnabled && bookingCommittedStart ? bookingDropoffDateDisplay : bookingPickupDateDisplay);
+      return false;
+    }
+    const invalidControl = firstInvalidControl(step);
+    if (invalidControl) {
+      setStepMessage(step, 'Complete the required information before continuing.');
+      invalidControl.reportValidity();
+      return false;
+    }
+    if (index === 0) {
+      const pickupValue = pickup.getSelection();
+      const dropoffValue = dropoff.getSelection();
+      if (!pickupValue || !dropoffValue) {
+        setStepMessage(step, 'Select both addresses from the suggestions before continuing.');
+        (!pickupValue ? form.elements.pickupAddress : form.elements.dropoffAddress).focus();
+        return false;
+      }
+      const incompleteStop = stopControllers.find(controller => !controller.getSelection());
+      if (incompleteStop) {
+        setStepMessage(step, 'Select every added stop from the suggestions or remove it.');
+        return false;
+      }
+    }
+    if (index === 1) {
+      if (form.elements.tripType.value === 'round_trip') {
+        const returnPickupValue = returnPickup.getSelection();
+        const returnDropoffValue = returnDropoff.getSelection();
+        if (!returnPickupValue || !returnDropoffValue) {
+          setStepMessage(step, 'Select both return-trip addresses from the suggestions before continuing.');
+          (!returnPickupValue ? form.elements.returnPickupAddress : form.elements.returnDropoffAddress).focus();
+          return false;
+        }
+      }
+    }
+    if (index === 3 && form.elements.phone.value.replace(/\D/g, '').length !== 10) {
+      setStepMessage(step, 'Enter a complete 10-digit phone number before continuing.');
+      form.elements.phone.focus();
+      return false;
+    }
+    return true;
+  }
+  function showBookingStep(index, { focus = true, autoPrice = true } = {}) {
+    currentBookingStep = Math.max(0, Math.min(index, bookingSteps.length - 1));
+    bookingSteps.forEach((step, stepIndex) => { step.hidden = stepIndex !== currentBookingStep; });
+    bookingProgressSegments.forEach((segment, stepIndex) => {
+      segment.classList.toggle('active', stepIndex === currentBookingStep);
+      segment.classList.toggle('complete', stepIndex < currentBookingStep);
+    });
+    bookingStepCount.textContent = `Step ${currentBookingStep + 1} of ${bookingSteps.length}`;
+    bookingStepName.textContent = bookingStepNames[currentBookingStep];
+    bookingProgress.setAttribute('aria-valuenow', String(currentBookingStep + 1));
+    if (focus) {
+      form.querySelector('.booking-flow-header').scrollIntoView({ block: 'start' });
+      bookingSteps[currentBookingStep].querySelector('h2')?.focus({ preventScroll: true });
+    }
+    if (autoPrice && currentBookingStep === bookingSteps.length - 1 && !currentQuote) void calculateQuote();
   }
   function showError(target, text) { target.className = 'form-message error'; target.textContent = text; }
   function customer() {
@@ -184,22 +377,70 @@ if (form) {
       if (!estimate || estimate.expired) { quoteMessage.textContent = 'That homepage estimate expired. Confirm the trip details and calculate a new price.'; return; }
       estimateId = estimate.estimateId;
       pickup.setSelection(estimate.pickup); dropoff.setSelection(estimate.dropoff);
-      form.elements.pickupDate.value = estimate.pickupDate; form.elements.pickupTime.value = estimate.pickupTime;
+      setBookingDates(estimate.pickupDate, estimate.dropoffDate || '');
+      if (estimate.dropoffDate) { form.elements.tripType.value = 'round_trip'; setRoundTripMode(true, { syncDatePicker: false, notify: false }); }
+      form.elements.pickupTime.value = estimate.pickupTime;
       quoteMessage.textContent = 'Trip details were transferred securely. Add any options and calculate your official price.';
     } catch { quoteMessage.textContent = 'The homepage estimate could not be loaded. Enter the trip details below.'; }
   }
 
-  form.elements.eventType.innerHTML = `<option value="">Choose an occasion</option>${OCCASIONS.map(value => `<option value="${value}">${value}</option>`).join('')}`;
-  form.elements.pickupDate.min = newYorkToday(); form.elements.pickupDate.value = newYorkToday(); form.elements.pickupTime.value = defaultTime();
-  form.elements.returnDate.min = newYorkToday();
+  function setRoundTripMode(roundTrip, { syncDatePicker = true, notify = true } = {}) {
+    document.querySelector('#return-fields').hidden = !roundTrip;
+    for (const input of document.querySelectorAll('#return-fields input')) input.required = roundTrip;
+    if (syncDatePicker) setBookingDropoffEnabled(roundTrip);
+    if (notify) invalidateQuote();
+  }
+  function syncAirportDetails() {
+    const enabled = form.elements.airportService.value !== 'none';
+    form.querySelectorAll('[data-airport-detail]').forEach(field => { field.hidden = !enabled; });
+    if (!enabled) {
+      form.elements.flightNumber.value = '';
+      form.elements.meetAndGreet.checked = false;
+    }
+  }
+
+  setBookingDates(newYorkToday()); form.elements.pickupTime.value = defaultTime(); syncAirportDetails();
+  bookingAddDropoffDate.addEventListener('click', () => {
+    form.elements.tripType.value = 'round_trip';
+    setRoundTripMode(true, { syncDatePicker: false, notify: false });
+    setBookingDropoffEnabled(true, true);
+    openBookingCalendar('end', bookingDropoffDateDisplay);
+  });
+  bookingRemoveDropoffDate.addEventListener('click', () => {
+    form.elements.tripType.value = 'one_way';
+    setBookingDropoffEnabled(false, true);
+    setRoundTripMode(false, { syncDatePicker: false, notify: false });
+    closeBookingCalendar(); bookingAddDropoffDate.focus();
+  });
+  bookingPickupDateDisplay.addEventListener('click', () => openBookingCalendar('start', bookingPickupDateDisplay));
+  bookingDropoffDateDisplay.addEventListener('click', () => openBookingCalendar('end', bookingDropoffDateDisplay));
+  bookingPickupDateDisplay.addEventListener('keydown', event => { if (['Enter', ' '].includes(event.key)) { event.preventDefault(); openBookingCalendar('start', bookingPickupDateDisplay); } });
+  bookingDropoffDateDisplay.addEventListener('keydown', event => { if (['Enter', ' '].includes(event.key)) { event.preventDefault(); openBookingCalendar('end', bookingDropoffDateDisplay); } });
+  bookingPreviousMonth.addEventListener('click', () => { bookingVisibleMonth = addBookingMonths(bookingVisibleMonth, -1); renderBookingCalendar(); });
+  bookingNextMonth.addEventListener('click', () => { bookingVisibleMonth = addBookingMonths(bookingVisibleMonth, 1); renderBookingCalendar(); });
+  bookingCalendar.querySelector('.range-calendar-close').addEventListener('click', () => closeBookingCalendar(true));
+  bookingCancelDates.addEventListener('click', () => closeBookingCalendar(true));
+  bookingApplyDates.addEventListener('click', applyBookingDates);
+  document.addEventListener('pointerdown', event => { if (!bookingCalendar.hidden && !event.target.closest('[data-booking-date-range]')) closeBookingCalendar(); });
+  document.addEventListener('keydown', event => { if (event.key === 'Escape') closeBookingCalendar(true); });
   form.elements.phone.addEventListener('input', () => { form.elements.phone.value = formatPhone(form.elements.phone.value); });
   form.elements.promotionCode.addEventListener('input', () => { form.elements.promotionCode.value = form.elements.promotionCode.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''); });
   form.elements.tripType.addEventListener('change', () => {
     const roundTrip = form.elements.tripType.value === 'round_trip';
-    document.querySelector('#return-fields').hidden = !roundTrip;
+    setRoundTripMode(roundTrip);
     document.querySelector('#hourly-field').hidden = form.elements.tripType.value !== 'hourly';
-    for (const input of document.querySelectorAll('#return-fields input')) input.required = roundTrip;
-    invalidateQuote();
+  });
+  form.elements.airportService.addEventListener('change', () => { syncAirportDetails(); invalidateQuote(); });
+  form.addEventListener('click', event => {
+    if (event.target.closest('[data-step-back]')) {
+      showBookingStep(currentBookingStep - 1);
+      return;
+    }
+    if (event.target.closest('[data-step-skip]')) {
+      showBookingStep(currentBookingStep + 1);
+      return;
+    }
+    if (event.target.closest('[data-step-next]') && validateBookingStep(currentBookingStep)) showBookingStep(currentBookingStep + 1);
   });
   form.addEventListener('input', event => { if (!['fullName', 'email', 'phone', 'contactMethod', 'notes', 'consent'].includes(event.target.name)) invalidateQuote(); });
   form.addEventListener('change', event => { if (!['fullName', 'email', 'phone', 'contactMethod', 'notes', 'consent'].includes(event.target.name)) invalidateQuote(); });
@@ -253,6 +494,8 @@ if (form) {
       reserveButton.textContent = currentQuote?.status === 'manual_review_required' ? 'Submit for Confirmation →' : currentQuote ? `Pay ${money(currentQuote.finalPriceCents)} Securely →` : 'Recalculate to Continue →';
     }
   });
+  const returningFromPayment = new URLSearchParams(location.search).has('payment');
+  showBookingStep(returningFromPayment ? bookingSteps.length - 1 : 0, { focus: false, autoPrice: false });
   void handlePaymentReturn();
   loadEstimate();
 }
