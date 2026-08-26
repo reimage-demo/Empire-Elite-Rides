@@ -399,7 +399,9 @@ textarea { min-height: 120px; resize: vertical; }
   .vehicle-stage > .gold-button { margin-top: 22px; }
   .form-grid.two { grid-template-columns: 1fr; }
   .quick-price-form { grid-template-columns: 1fr; gap: 15px; }
-  .date-range-control { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .date-range-control { grid-template-columns: minmax(0, 1fr); gap: 15px; width: 100%; }
+  .date-range-control > label, .date-range-control > .optional-date-field, .date-range-control > .time-field { width: 100%; min-width: 0; }
+  .date-range-control .date-range-display, .date-range-control select.time-select { width: 100%; }
   .date-range-control .date-range-display { padding: 12px 34px 12px 12px; font-size: 13px; }
   .range-calendar { position: fixed; inset: 76px 0 0; width: auto; padding: 20px 16px 28px; overflow-y: auto; border: 0; box-shadow: 0 -12px 50px rgba(0,0,0,.26); }
   .range-calendar-months { grid-template-columns: 1fr; max-width: 420px; margin: auto; }
@@ -407,6 +409,8 @@ textarea { min-height: 120px; resize: vertical; }
   .range-calendar-day, .range-calendar-blank { min-height: 42px; aspect-ratio: auto; }
   .range-calendar-top, .range-calendar-nav { max-width: 420px; margin-left: auto; margin-right: auto; }
   .quick-time-field { grid-column: 1; }
+  .quick-install-action { margin-bottom: 28px; }
+  .quick-location-row { margin-bottom: 30px; }
   .quick-price-form input, .quick-price-form select { min-height: 54px; font-size: 16px; }
   .quick-price-form .gold-button { width: 100%; min-width: 0; min-height: 56px; }
   .quick-submit-actions { width: 100%; }

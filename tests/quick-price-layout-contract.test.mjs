@@ -6,6 +6,7 @@ const homepage = readFileSync(new URL('../index.html', import.meta.url), 'utf8')
 const booking = readFileSync(new URL('../booking.html', import.meta.url), 'utf8')
 const quickPrice = readFileSync(new URL('../quick-price.js', import.meta.url), 'utf8')
 const pricingClient = readFileSync(new URL('../pricing-client.js', import.meta.url), 'utf8')
+const styles = readFileSync(new URL('../styles.css', import.meta.url), 'utf8')
 
 test('pickup and return dates align beside their corresponding times', () => {
   for (const markup of [homepage, booking]) {
@@ -42,4 +43,12 @@ test('current-location shortcut is centered below the home-screen shortcut', () 
   const formPosition = homepage.indexOf('<form id="quick-price-form"')
   assert.ok(installPosition < locationPosition && locationPosition < formPosition)
   assert.doesNotMatch(homepage.match(/<div class="address-field">[\s\S]*?<\/div>/)?.[0] || '', /data-use-current-location/)
+})
+
+test('mobile schedule controls fill the card and location actions have breathing room', () => {
+  const mobile = styles.match(/@media \(max-width: 600px\) \{[\s\S]*?@media \(prefers-reduced-motion/)?.[0] || ''
+  assert.match(mobile, /\.date-range-control \{ grid-template-columns: minmax\(0, 1fr\); gap: 15px; width: 100%; \}/)
+  assert.match(mobile, /\.date-range-control \.date-range-display, \.date-range-control select\.time-select \{ width: 100%; \}/)
+  assert.match(mobile, /\.quick-install-action \{ margin-bottom: 28px; \}/)
+  assert.match(mobile, /\.quick-location-row \{ margin-bottom: 30px; \}/)
 })
