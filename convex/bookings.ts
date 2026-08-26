@@ -3,8 +3,9 @@ import { ConvexError, v } from 'convex/values'
 import { internal } from './_generated/api'
 import { requireActiveSession } from './lib/sessionToken'
 import { bookingBlocksAvailability } from './lib/bookingState'
+import { localPickupToUtc } from './lib/time'
+import { capacityIssue, MAX_DAILY_RESERVATIONS } from './lib/capacityCore.mjs'
 
-const TWO_HOURS = 2 * 60 * 60 * 1000
 const status = v.union(v.literal('payment_pending'), v.literal('requested'), v.literal('manual_review'), v.literal('confirmed'), v.literal('completed'), v.literal('cancelled'), v.literal('refunded'))
 
 function timeValue(date: string, time: string) {
@@ -48,7 +49,7 @@ async function insertBooking(ctx: any, args: any, source: 'website' | 'admin') {
   if (args.fullName.trim().length < 2 || (args.email && !args.email.includes('@')) || args.phone.trim().length < 7) bookingError('INVALID_CONTACT_DETAILS', 'Please provide valid contact details.')
   if (args.contactMethod === 'email' && !args.email) bookingError('INVALID_CONTACT_DETAILS', 'An email address is required when email is the preferred contact method.')
   if (!args.eventType.trim()) bookingError('INVALID_OCCASION', 'Please choose an occasion.')
-  if (!/^\d{2}:(00|30)$/.test(args.startTime) || !/^\d{2}:(00|30)$/.test(args.endTime)) bookingError('INVALID_TIME_INTERVAL', 'Please choose times in 30-minute intervals.')
+  if (!/^\d{2}:(00|15|30|45)$/.test(args.startTime) || !/^\d{2}:(00|15|30|45)$/.test(args.endTime)) bookingError('INVALID_TIME_INTERVAL', 'Please choose times in 15-minute intervals.')
   if (args.phone.replace(/\D/g, '').length !== 10) bookingError('INVALID_PHONE', 'Please provide a complete 10-digit phone number.')
   if (args.serviceDate < nowInNewYork.date) bookingError('PAST_DATE', 'Please choose a future date.')
   if (args.serviceDate === nowInNewYork.date && nowInNewYork.hour >= 12) bookingError('SAME_DAY_CUTOFF', 'Same-day reservations must be requested before 12:00 PM Eastern Time.')
@@ -56,9 +57,14 @@ async function insertBooking(ctx: any, args: any, source: 'website' | 'admin') {
     bookingError('INVALID_PAYMENT_AMOUNT', 'Enter a payment amount between $0.50 and $100,000.00.')
   }
 
-  const possibleConflicts = await ctx.db.query('bookings').withIndex('by_start', (q: any) => q.lt('startAt', endAt + TWO_HOURS)).collect()
-  const conflict = possibleConflicts.some((row: any) => bookingBlocksAvailability(row) && startAt < row.endAt + TWO_HOURS && endAt + TWO_HOURS > row.startAt)
-  if (conflict) bookingError('TIME_UNAVAILABLE', 'That time is unavailable because it overlaps a booking or its two-hour service buffer.')
+  const activeForDate = (await ctx.db.query('bookings').withIndex('by_date', (q: any) => q.eq('serviceDate', args.serviceDate)).collect()).filter((row: any) => bookingBlocksAvailability(row))
+  const scheduledPickupAt = localPickupToUtc(args.serviceDate, args.startTime)
+  const capacityReason = capacityIssue(activeForDate.map((row: any) => localPickupToUtc(row.serviceDate, row.startTime)), scheduledPickupAt)
+  if (capacityReason === 'day_full') bookingError('DAY_FULL', 'Daily capacity has been reached for this date. Choose another date.')
+  if (capacityReason === 'pickup_spacing') bookingError('TIME_UNAVAILABLE', 'Pickup times must be at least two hours apart. Choose another time.')
+  const startMinutes = minutesFromTime(args.startTime), endMinutes = minutesFromTime(args.endTime)
+  const conflict = activeForDate.some((row: any) => startMinutes < minutesFromTime(row.endTime) && endMinutes > minutesFromTime(row.startTime))
+  if (conflict) bookingError('TIME_UNAVAILABLE', 'That time overlaps an existing reservation. Choose another time.')
 
   const now = Date.now()
   const confirmationCode = `EER-${now.toString(36).slice(-6).toUpperCase()}${Math.floor(Math.random() * 90 + 10)}`
@@ -137,13 +143,18 @@ export const availabilityForDate = query({
   args: { serviceDate: v.string() },
   handler: async (ctx, { serviceDate }) => {
     const rows = await ctx.db.query('bookings').withIndex('by_date', q => q.eq('serviceDate', serviceDate)).collect()
-    return rows
-      .filter(row => bookingBlocksAvailability(row))
-      .map(row => ({
-        unavailableFrom: row.startTime,
-        unavailableUntil: timeFromMinutes(minutesFromTime(row.endTime) + 120)
-      }))
-      .sort((a, b) => a.unavailableFrom.localeCompare(b.unavailableFrom))
+    const active = rows.filter(row => bookingBlocksAvailability(row))
+    const existingPickupTimes = active.map(row => localPickupToUtc(row.serviceDate, row.startTime))
+    const unavailableTimes: string[] = []
+    for (let minute = 0; minute < 24 * 60; minute += 15) {
+      const time = timeFromMinutes(minute)
+      try {
+        if (capacityIssue(existingPickupTimes, localPickupToUtc(serviceDate, time))) unavailableTimes.push(time)
+      } catch {
+        unavailableTimes.push(time)
+      }
+    }
+    return { dayFull: active.length >= MAX_DAILY_RESERVATIONS, unavailableTimes }
   }
 })
 

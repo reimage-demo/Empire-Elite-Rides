@@ -56,6 +56,7 @@ if (form) {
   let currentQuote = null;
   let estimateId = null;
   let expirationTimer = null;
+  let availabilityRequest = 0;
   const pendingCheckoutKey = 'eer-pending-checkout';
 
   const pickup = initAddressAutocomplete(form.elements.pickupAddress, document.querySelector('#booking-pickup-suggestions'), { onInvalidate: invalidateQuote, onSelect: invalidateQuote });
@@ -87,6 +88,24 @@ if (form) {
     bookingPickupDateDisplay.value = bookingCommittedStart ? bookingDateFormatter.format(bookingDateFromIso(bookingCommittedStart)) : '';
     bookingDropoffDateDisplay.value = bookingDropoffEnabled && bookingCommittedEnd ? bookingDateFormatter.format(bookingDateFromIso(bookingCommittedEnd)) : '';
     if (notify) invalidateQuote();
+    void refreshBookingPickupAvailability();
+  }
+  async function refreshBookingPickupAvailability() {
+    const serviceDate = bookingCommittedStart;
+    const request = ++availabilityRequest;
+    if (!serviceDate) { bookingPickupTimePicker.setUnavailable([]); return; }
+    try {
+      const client = await convexClient();
+      const availability = await client.query('bookings:availabilityForDate', { serviceDate });
+      if (request !== availabilityRequest || serviceDate !== bookingCommittedStart) return;
+      const selectionRemoved = bookingPickupTimePicker.setUnavailable(availability.unavailableTimes);
+      const scheduleMessage = bookingSteps[1].querySelector('[data-step-message]');
+      if (availability.dayFull) setStepMessage(bookingSteps[1], "We're fully booked for this date. Please choose another date.");
+      else if (selectionRemoved) setStepMessage(bookingSteps[1], 'Your previously selected pickup time is no longer available. Please choose another time.');
+      else if (/fully booked|no longer available/i.test(scheduleMessage?.textContent || '')) setStepMessage(bookingSteps[1]);
+    } catch {
+      if (request === availabilityRequest) bookingPickupTimePicker.setUnavailable([]);
+    }
   }
   function syncBookingDropoffUi() {
     bookingAddDropoffDate.hidden = bookingDropoffEnabled;
@@ -310,7 +329,11 @@ if (form) {
       const row = document.createElement('div'), name = document.createElement('dt'), value = document.createElement('dd');
       name.textContent = line.label; value.textContent = money(line.amountCents); row.append(name, value); return row;
     }));
-    quoteMessage.textContent = quote.status === 'rejected' ? 'The selected time is unavailable. Choose another pickup time.' : quote.status === 'manual_review_required' ? 'This price requires staff confirmation. You can submit the request now.' : 'Your trip details and price are ready.';
+    quoteMessage.textContent = quote.status === 'rejected'
+      ? quote.availabilityReason === 'day_full'
+        ? "We're fully booked for this date. Please choose another date."
+        : 'That pickup window is fully booked. Please choose a different time.'
+      : quote.status === 'manual_review_required' ? 'This price requires staff confirmation. You can submit the request now.' : 'Your trip details and price are ready.';
     reserveButton.textContent = quote.status === 'manual_review_required' ? 'Submit for Confirmation →' : `Pay ${money(quote.finalPriceCents)} Securely →`;
     reserveButton.disabled = quote.status === 'rejected';
     const expiration = quoteResult.querySelector('[data-quote-expiration]');

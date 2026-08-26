@@ -6,6 +6,7 @@ import { localParts, localPickupToUtc } from './lib/time'
 import { calculateRidePrice } from './lib/pricingCore.mjs'
 import { mergePricingSnapshot } from './lib/pricingConfig.mjs'
 import { bookingBlocksAvailability } from './lib/bookingState'
+import { capacityIssue } from './lib/capacityCore.mjs'
 
 const internalApi: any = internal
 
@@ -253,6 +254,10 @@ export const checkAvailability = internalQuery({
   handler: async (ctx, args) => {
     const now = Date.now()
     const bookings = (await ctx.db.query('bookings').collect()).filter(row => bookingBlocksAvailability(row, now))
+    const pickupLocal = localParts(args.scheduledAt)
+    const sameDayBookings = bookings.filter(row => row.serviceDate === pickupLocal.date)
+    const capacityReason = capacityIssue(sameDayBookings.map(row => localPickupToUtc(row.serviceDate, row.startTime)), args.scheduledAt)
+    if (capacityReason) return { status: 'unavailable', reason: capacityReason }
     const blocks = (await ctx.db.query('blackoutPeriods').withIndex('by_active', q => q.eq('active', true)).collect()).filter(row => !row.vehicleId || row.vehicleId === args.vehicleId)
     const occupied = [
       ...bookings.map(row => ({ startAt: localPickupToUtc(row.serviceDate, row.startTime), endAt: localPickupToUtc(row.serviceDate, row.endTime), type: 'booking' })),
@@ -264,8 +269,7 @@ export const checkAvailability = internalQuery({
     const closestGapMinutes = gaps.length ? Math.min(...gaps) / 60000 : Number.POSITIVE_INFINITY
     const status = closestGapMinutes < args.config.confirmationRequiredThresholdMinutes ? 'confirmation_required'
       : closestGapMinutes < args.config.limitedAvailabilityThresholdMinutes ? 'limited_availability' : 'available'
-    const pickupLocal = localParts(args.scheduledAt)
-    const sameDay = bookings.filter(row => row.serviceDate === pickupLocal.date).length
+    const sameDay = sameDayBookings.length
     const nearby = bookings.filter(row => Math.abs(localPickupToUtc(row.serviceDate, row.startTime) - args.scheduledAt) <= 3 * 3600000).length
     return { status, closestGapMinutes: Number.isFinite(closestGapMinutes) ? Math.round(closestGapMinutes) : null, sameDayBookings: sameDay, nearbyBookings: nearby }
   }
@@ -331,7 +335,7 @@ export const generateHomepageQuote = action({
       estimatedPriceCents: pricing.finalPriceCents, pricingConfigVersion: state.config.version, status, createdAt, expiresAt
     }
     const estimateId = await ctx.runMutation(internalApi.quotes.saveEstimate, { record })
-    return { estimateId, status, expiresAt, estimatedPriceCents: pricing.finalPriceCents, pickupAddress: pickup.formattedAddress, dropoffAddress: dropoff.formattedAddress, pickupDate: args.pickupDate, ...(dropoffDate ? { dropoffDate } : {}), pickupTime: args.pickupTime, passengerMiles: pricing.passengerMiles, passengerMinutes: pricing.passengerMinutes, promotion: pricing.appliedPromotion ? { id: pricing.appliedPromotion.promotionId, kind: pricing.appliedPromotion.kind, name: pricing.appliedPromotion.name, percentageBps: pricing.appliedPromotion.percentageBps, discountCents: pricing.discountCents } : null, customerBreakdown: pricing.customerBreakdown.filter((line: any) => !['Total', 'Route and travel', 'Vehicle positioning and travel'].includes(line.label)) }
+    return { estimateId, status, availabilityReason: availability.reason || null, expiresAt, estimatedPriceCents: pricing.finalPriceCents, pickupAddress: pickup.formattedAddress, dropoffAddress: dropoff.formattedAddress, pickupDate: args.pickupDate, ...(dropoffDate ? { dropoffDate } : {}), pickupTime: args.pickupTime, passengerMiles: pricing.passengerMiles, passengerMinutes: pricing.passengerMinutes, promotion: pricing.appliedPromotion ? { id: pricing.appliedPromotion.promotionId, kind: pricing.appliedPromotion.kind, name: pricing.appliedPromotion.name, percentageBps: pricing.appliedPromotion.percentageBps, discountCents: pricing.discountCents } : null, customerBreakdown: pricing.customerBreakdown.filter((line: any) => !['Total', 'Route and travel', 'Vehicle positioning and travel'].includes(line.label)) }
   }
 })
 
@@ -421,7 +425,7 @@ export const generateBookingQuote = action({
       promotionSnapshot: pricing.appliedPromotion ? { kind: pricing.appliedPromotion.kind, name: pricing.appliedPromotion.name, code: pricing.appliedPromotion.code, percentageBps: pricing.appliedPromotion.percentageBps, discountCents: pricing.discountCents } : undefined
     }
     const quoteId = await ctx.runMutation(internalApi.quotes.saveQuote, { record, estimateId: args.estimateId })
-    return { quoteId, status, expiresAt, finalPriceCents: pricing.finalPriceCents, discountCents: pricing.discountCents, passengerMiles: pricing.passengerMiles, passengerMinutes: pricing.passengerMinutes, customerBreakdown: pricing.customerBreakdown, availability: availability.status, promotion: pricing.appliedPromotion ? { ...(pricing.appliedPromotion.promotionId ? { id: pricing.appliedPromotion.promotionId } : {}), kind: pricing.appliedPromotion.kind, name: pricing.appliedPromotion.name, code: pricing.appliedPromotion.kind === 'code' ? pricing.appliedPromotion.code : undefined, percentageBps: pricing.appliedPromotion.percentageBps, discountCents: pricing.discountCents } : null }
+    return { quoteId, status, availabilityReason: availability.reason || null, expiresAt, finalPriceCents: pricing.finalPriceCents, discountCents: pricing.discountCents, passengerMiles: pricing.passengerMiles, passengerMinutes: pricing.passengerMinutes, customerBreakdown: pricing.customerBreakdown, availability: availability.status, promotion: pricing.appliedPromotion ? { ...(pricing.appliedPromotion.promotionId ? { id: pricing.appliedPromotion.promotionId } : {}), kind: pricing.appliedPromotion.kind, name: pricing.appliedPromotion.name, code: pricing.appliedPromotion.kind === 'code' ? pricing.appliedPromotion.code : undefined, percentageBps: pricing.appliedPromotion.percentageBps, discountCents: pricing.discountCents } : null }
   }
 })
 

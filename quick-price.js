@@ -39,6 +39,7 @@ if (form) {
   let visibleMonth;
   let selectionMode = 'start';
   let calendarTrigger = pickupDateDisplay;
+  let availabilityRequest = 0;
 
   function serviceNow() {
     const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date()).reduce((map, part) => ({ ...map, [part.type]: part.value }), {});
@@ -59,6 +60,23 @@ if (form) {
     pickupDateDisplay.value = committedStart ? displayDateFormatter.format(dateFromIso(committedStart)) : '';
     dropoffDateDisplay.value = dropoffEnabled && committedEnd ? displayDateFormatter.format(dateFromIso(committedEnd)) : '';
     if (notify) hideResult();
+    void refreshPickupAvailability();
+  }
+  async function refreshPickupAvailability() {
+    const serviceDate = committedStart;
+    const request = ++availabilityRequest;
+    if (!serviceDate) { pickupTimePicker.setUnavailable([]); return; }
+    try {
+      const client = await convexClient();
+      const availability = await client.query('bookings:availabilityForDate', { serviceDate });
+      if (request !== availabilityRequest || serviceDate !== committedStart) return;
+      const selectionRemoved = pickupTimePicker.setUnavailable(availability.unavailableTimes);
+      if (availability.dayFull) status.textContent = "We're fully booked for this date. Please choose another date.";
+      else if (selectionRemoved) status.textContent = 'Your previously selected pickup time is no longer available. Please choose another time.';
+      else if (/fully booked|no longer available/i.test(status.textContent)) status.textContent = '';
+    } catch {
+      if (request === availabilityRequest) pickupTimePicker.setUnavailable([]);
+    }
   }
   function syncDropoffUi() {
     addDropoffDateButton.hidden = dropoffEnabled;
@@ -212,7 +230,9 @@ if (form) {
       if (dropoffEnabled && committedEnd) quoteArgs.dropoffDate = committedEnd;
       const quote = await client.action('quotes:generateHomepageQuote', quoteArgs);
       if (quote.status === 'unavailable') {
-        status.textContent = 'The selected pickup time is unavailable. Please choose another time.';
+        status.textContent = quote.availabilityReason === 'day_full'
+          ? "We're fully booked for this date. Please choose another date."
+          : 'That pickup window is fully booked. Please choose a different time.';
         return;
       }
       status.textContent = quote.status === 'confirmation_required' ? 'Availability confirmation required' : '';

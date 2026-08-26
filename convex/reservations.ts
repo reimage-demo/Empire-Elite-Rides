@@ -3,6 +3,7 @@ import { internal } from './_generated/api'
 import { ConvexError, v } from 'convex/values'
 import { localParts, localPickupToUtc } from './lib/time'
 import { bookingBlocksAvailability } from './lib/bookingState'
+import { capacityIssue } from './lib/capacityCore.mjs'
 
 const customerValidator = v.object({
   fullName: v.string(), email: v.string(), phone: v.string(),
@@ -28,6 +29,11 @@ export const submit = mutation({
     if (quote.customerSessionId !== args.sessionId || quote.expiresAt <= now || !['instant_quote', 'manual_review_required', 'approved'].includes(quote.status)) fail('QUOTE_EXPIRED', 'Recalculate this request before submitting it.')
 
     const activeBookings = (await ctx.db.query('bookings').collect()).filter(row => bookingBlocksAvailability(row, now))
+    const pickupDate = localParts(quote.scheduledPickupAt).date
+    const sameDayBookings = activeBookings.filter(row => row.serviceDate === pickupDate)
+    const capacityReason = capacityIssue(sameDayBookings.map(row => localPickupToUtc(row.serviceDate, row.startTime)), quote.scheduledPickupAt)
+    if (capacityReason === 'day_full') fail('DAY_FULL', "We're fully booked for this date. Please choose another date.")
+    if (capacityReason === 'pickup_spacing') fail('TIME_UNAVAILABLE', 'That pickup window is fully booked. Please choose a different time.')
     const activeBlocks = await ctx.db.query('blackoutPeriods').withIndex('by_active', q => q.eq('active', true)).collect()
     const conflict = [
       ...activeBookings.map(row => ({ startAt: localPickupToUtc(row.serviceDate, row.startTime), endAt: localPickupToUtc(row.serviceDate, row.endTime) })),

@@ -48,41 +48,52 @@ function timeLabel(value) {
 }
 
 export function initTimePicker(select, { onChange } = {}) {
-  const placeholder = document.createElement('option');
-  placeholder.value = '';
-  placeholder.textContent = 'Select a time';
-  placeholder.disabled = true;
   const groups = [
     { name: 'Early morning', start: 0, end: 5 },
     { name: 'Morning', start: 5, end: 12 },
     { name: 'Afternoon', start: 12, end: 17 },
     { name: 'Evening', start: 17, end: 24 }
   ];
-  const groupElements = [];
-  for (const group of groups) {
-    const optionGroup = document.createElement('optgroup');
-    optionGroup.label = group.name;
-    for (let hour = group.start; hour < group.end; hour += 1) {
-      for (const minute of [0, 15, 30, 45]) {
-        const value = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
-        const option = document.createElement('option');
-        option.value = value;
-        option.textContent = timeLabel(value);
-        optionGroup.append(option);
+  let unavailable = new Set();
+  function renderOptions(value = select.value) {
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = 'Select a time';
+    placeholder.disabled = true;
+    const groupElements = [];
+    for (const group of groups) {
+      const optionGroup = document.createElement('optgroup');
+      optionGroup.label = group.name;
+      for (let hour = group.start; hour < group.end; hour += 1) {
+        for (const minute of [0, 15, 30, 45]) {
+          const optionValue = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+          if (unavailable.has(optionValue)) continue;
+          const option = document.createElement('option');
+          option.value = optionValue;
+          option.textContent = timeLabel(optionValue);
+          optionGroup.append(option);
+        }
       }
+      if (optionGroup.children.length) groupElements.push(optionGroup);
     }
-    groupElements.push(optionGroup);
+    select.replaceChildren(placeholder, ...groupElements);
+    select.value = value && !unavailable.has(value) ? value : '';
   }
-  select.replaceChildren(placeholder, ...groupElements);
-  select.value = '';
+  renderOptions('');
   function setValue(value, notify = false) {
     select.value = value || '';
     if (notify) {
       select.dispatchEvent(new Event('change', { bubbles: true }));
     }
   }
+  function setUnavailable(values) {
+    const previous = select.value;
+    unavailable = new Set(values || []);
+    renderOptions(previous);
+    return Boolean(previous && !select.value);
+  }
   select.addEventListener('change', () => onChange?.(select.value));
-  return { getValue: () => select.value, setValue, focus: () => select.focus() };
+  return { getValue: () => select.value, setValue, setUnavailable, focus: () => select.focus() };
 }
 
 export function readableDate(date, time) {

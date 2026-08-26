@@ -15,6 +15,7 @@ import type * as crons from "../crons.js";
 import type * as http from "../http.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_bookingState from "../lib/bookingState.js";
+import type * as lib_capacityCore from "../lib/capacityCore.js";
 import type * as lib_defaultPricing from "../lib/defaultPricing.js";
 import type * as lib_pricingConfig from "../lib/pricingConfig.js";
 import type * as lib_pricingCore from "../lib/pricingCore.js";
@@ -45,6 +46,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   "lib/auth": typeof lib_auth;
   "lib/bookingState": typeof lib_bookingState;
+  "lib/capacityCore": typeof lib_capacityCore;
   "lib/defaultPricing": typeof lib_defaultPricing;
   "lib/pricingConfig": typeof lib_pricingConfig;
   "lib/pricingCore": typeof lib_pricingCore;
