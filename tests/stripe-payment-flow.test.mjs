@@ -87,3 +87,11 @@ test('amount mismatch never marks the booking paid or schedules Pushover', async
   assert.equal(state.booking.status, 'payment_pending')
   assert.equal(state.scheduled.length, 0)
 })
+
+test('paid admin checkout preserves confirmed booking status', async () => {
+  const state = harness({ status: 'confirmed', source: 'admin' })
+  await processCheckoutCompleted(state.ctx, paidEvent, 'sendPaidCheckout')
+  assert.equal(state.booking.paymentStatus, 'paid')
+  assert.equal(state.booking.status, 'confirmed')
+  assert.equal(state.scheduled.length, 1)
+})

@@ -2,6 +2,7 @@ import { internalMutation, query } from './_generated/server'
 import { ConvexError, v } from 'convex/values'
 import { localParts } from './lib/time'
 import { bookingBlocksAvailability } from './lib/bookingState'
+import { requireActiveSession } from './lib/sessionToken'
 
 const customerValidator = v.object({
   fullName: v.string(), email: v.string(), phone: v.string(),
@@ -121,10 +122,43 @@ export const prepareCheckout = internalMutation({
   }
 })
 
+export const prepareAdminCheckout = internalMutation({
+  args: { sessionToken: v.string(), bookingId: v.id('bookings') },
+  handler: async (ctx, args) => {
+    await requireActiveSession(ctx, args.sessionToken)
+    const rawBooking = await ctx.db.get(args.bookingId)
+    if (!rawBooking || rawBooking.source !== 'admin') fail('BOOKING_NOT_FOUND', 'This admin booking is not available.')
+    const booking = rawBooking!
+    if (booking.paymentStatus === 'paid') fail('ALREADY_PAID', 'This reservation is already paid.')
+    if (['cancelled', 'refunded'].includes(booking.status)) fail('BOOKING_NOT_PAYABLE', 'This reservation cannot accept a payment.')
+    if (!Number.isInteger(booking.paymentAmountCents) || booking.paymentAmountCents! < 50) {
+      fail('INVALID_PAYMENT_AMOUNT', 'This booking does not have a valid payment amount.')
+    }
+    const now = Date.now()
+    if (booking.paymentStatus === 'checkout_pending' && booking.paymentExpiresAt && booking.paymentExpiresAt > now && booking.stripeCheckoutUrl) {
+      return {
+        bookingId: booking._id, confirmationCode: booking.confirmationCode,
+        email: booking.email, amountCents: booking.paymentAmountCents!, currency: booking.paymentCurrency || 'usd',
+        paymentExpiresAt: booking.paymentExpiresAt, checkoutUrl: booking.stripeCheckoutUrl
+      }
+    }
+    const paymentExpiresAt = now + (24 * 60 - 5) * 60 * 1000
+    await ctx.db.patch(booking._id, {
+      paymentStatus: 'checkout_pending', paymentCurrency: 'usd', paymentExpiresAt,
+      stripeCheckoutSessionId: undefined, stripeCheckoutUrl: undefined, updatedAt: now
+    })
+    return {
+      bookingId: booking._id, confirmationCode: booking.confirmationCode,
+      email: booking.email, amountCents: booking.paymentAmountCents!, currency: 'usd',
+      paymentExpiresAt, checkoutUrl: undefined
+    }
+  }
+})
+
 export const attachCheckoutSession = internalMutation({
   args: {
     bookingId: v.id('bookings'), checkoutSessionId: v.string(),
-    amountCents: v.number(), currency: v.string()
+    checkoutUrl: v.string(), amountCents: v.number(), currency: v.string()
   },
   handler: async (ctx, args) => {
     const rawBooking = await ctx.db.get(args.bookingId)
@@ -136,7 +170,12 @@ export const attachCheckoutSession = internalMutation({
     if (booking.stripeCheckoutSessionId && booking.stripeCheckoutSessionId !== args.checkoutSessionId) {
       fail('PAYMENT_INTEGRITY_ERROR', 'The secure payment could not be prepared.')
     }
-    await ctx.db.patch(args.bookingId, { stripeCheckoutSessionId: args.checkoutSessionId, updatedAt: Date.now() })
+    let checkoutUrl: URL
+    try { checkoutUrl = new URL(args.checkoutUrl) } catch { fail('PAYMENT_INTEGRITY_ERROR', 'The secure payment could not be prepared.') }
+    if (checkoutUrl!.protocol !== 'https:' || checkoutUrl!.hostname !== 'checkout.stripe.com') {
+      fail('PAYMENT_INTEGRITY_ERROR', 'The secure payment could not be prepared.')
+    }
+    await ctx.db.patch(args.bookingId, { stripeCheckoutSessionId: args.checkoutSessionId, stripeCheckoutUrl: args.checkoutUrl, updatedAt: Date.now() })
   }
 })
 
@@ -146,7 +185,11 @@ export const releaseFailedCheckout = internalMutation({
     const booking = await ctx.db.get(bookingId)
     if (!booking || booking.stripeCheckoutSessionId || booking.paymentStatus !== 'checkout_pending') return
     await releasePromotionUse(ctx, booking)
-    await ctx.db.patch(bookingId, { paymentStatus: 'failed', status: 'cancelled', updatedAt: Date.now() })
+    await ctx.db.patch(bookingId, {
+      paymentStatus: 'failed',
+      status: booking.source === 'admin' ? booking.status : 'cancelled',
+      updatedAt: Date.now()
+    })
   }
 })
 
@@ -159,7 +202,11 @@ export const expirePendingCheckouts = internalMutation({
     for (const booking of pending) {
       if (booking.paymentExpiresAt && booking.paymentExpiresAt <= now) {
         await releasePromotionUse(ctx, booking)
-        await ctx.db.patch(booking._id, { paymentStatus: 'expired', status: 'cancelled', updatedAt: now })
+        await ctx.db.patch(booking._id, {
+          paymentStatus: 'expired',
+          status: booking.source === 'admin' ? booking.status : 'cancelled',
+          updatedAt: now
+        })
         expired += 1
       }
     }

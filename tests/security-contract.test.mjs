@@ -16,6 +16,7 @@ const stripeWebhook = await readFile(new URL('../convex/stripeWebhook.ts', impor
 const stripeWebhookCore = await readFile(new URL('../convex/lib/stripeWebhookCore.mjs', import.meta.url), 'utf8')
 const payments = await readFile(new URL('../convex/payments.ts', import.meta.url), 'utf8')
 const paymentRecords = await readFile(new URL('../convex/paymentRecords.ts', import.meta.url), 'utf8')
+const bookings = await readFile(new URL('../convex/bookings.ts', import.meta.url), 'utf8')
 const promotions = await readFile(new URL('../convex/promotions.ts', import.meta.url), 'utf8')
 const promotionsAdmin = await readFile(new URL('../convex/promotionsAdmin.ts', import.meta.url), 'utf8')
 const siteScript = await readFile(new URL('../script.js', import.meta.url), 'utf8')
@@ -136,4 +137,22 @@ test('admin portal renders server-owned payment state and Stripe identifiers', (
   assert.match(adminPortal, /row\.paymentStatus/)
   assert.match(adminPortal, /row\.stripeCheckoutSessionId/)
   assert.match(adminPortal, /row\.stripePaymentIntentId/)
+})
+
+test('manual admin bookings generate authenticated Stripe Checkout links from a persisted amount', () => {
+  assert.match(bookings, /paymentAmountCents: v\.number\(\)/)
+  assert.match(bookings, /paymentAmountCents: source === 'admin' \? args\.paymentAmountCents/)
+  assert.match(paymentRecords, /prepareAdminCheckout = internalMutation/)
+  assert.match(paymentRecords, /requireActiveSession\(ctx, args\.sessionToken\)/)
+  assert.match(payments, /createAdminCheckout = action/)
+  assert.match(payments, /unit_amount: booking\.amountCents/)
+  assert.doesNotMatch(payments.match(/createAdminCheckout = action\(\{[\s\S]*?handler:/)?.[0] || '', /amount|price|cents/i)
+  assert.match(adminPortal, /'Open Stripe Checkout'/)
+  assert.match(adminPortal, /'Send payment link'/)
+  assert.match(adminPortal, /navigator\.share/)
+})
+
+test('admin Stripe links are stored and must use Stripe Checkout HTTPS URLs', () => {
+  assert.match(adminSchema, /stripeCheckoutUrl: v\.optional\(v\.string\(\)\)/)
+  assert.match(paymentRecords, /checkoutUrl.*hostname !== 'checkout\.stripe\.com'/s)
 })

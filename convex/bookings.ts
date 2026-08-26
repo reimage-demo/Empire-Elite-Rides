@@ -52,6 +52,9 @@ async function insertBooking(ctx: any, args: any, source: 'website' | 'admin') {
   if (args.phone.replace(/\D/g, '').length !== 10) bookingError('INVALID_PHONE', 'Please provide a complete 10-digit phone number.')
   if (args.serviceDate < nowInNewYork.date) bookingError('PAST_DATE', 'Please choose a future date.')
   if (args.serviceDate === nowInNewYork.date && nowInNewYork.hour >= 12) bookingError('SAME_DAY_CUTOFF', 'Same-day reservations must be requested before 12:00 PM Eastern Time.')
+  if (source === 'admin' && (!Number.isInteger(args.paymentAmountCents) || args.paymentAmountCents < 50 || args.paymentAmountCents > 10_000_000)) {
+    bookingError('INVALID_PAYMENT_AMOUNT', 'Enter a payment amount between $0.50 and $100,000.00.')
+  }
 
   const possibleConflicts = await ctx.db.query('bookings').withIndex('by_start', (q: any) => q.lt('startAt', endAt + TWO_HOURS)).collect()
   const conflict = possibleConflicts.some((row: any) => bookingBlocksAvailability(row) && startAt < row.endAt + TWO_HOURS && endAt + TWO_HOURS > row.startAt)
@@ -73,7 +76,10 @@ async function insertBooking(ctx: any, args: any, source: 'website' | 'admin') {
     endAt,
     source,
     status: source === 'admin' ? 'confirmed' : 'requested',
-    paymentStatus: 'not_required',
+    paymentStatus: source === 'admin' ? 'checkout_pending' : 'not_required',
+    paymentAmountCents: source === 'admin' ? args.paymentAmountCents : undefined,
+    paymentCurrency: source === 'admin' ? 'usd' : undefined,
+    paymentExpiresAt: source === 'admin' ? now + (24 * 60 - 5) * 60 * 1000 : undefined,
     createdAt: now,
     updatedAt: now
   })
@@ -118,7 +124,8 @@ export const createAdmin = mutation({
     eventType: v.string(),
     tripType: v.union(v.literal('pickup'), v.literal('dropoff'), v.literal('both')),
     serviceDate: v.string(), startTime: v.string(), endTime: v.string(),
-    pickupAddress: v.string(), destination: v.string(), notes: v.string()
+    pickupAddress: v.string(), destination: v.string(), notes: v.string(),
+    paymentAmountCents: v.number()
   },
   handler: async (ctx, { sessionToken, ...args }) => {
     await requireAdmin(ctx, sessionToken)

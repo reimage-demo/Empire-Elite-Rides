@@ -106,6 +106,8 @@ test('booking can be installed from the branded home-screen prompt', () => {
   assert.match(home, /rel="apple-touch-icon"/)
   assert.match(siteScript, /beforeinstallprompt/)
   assert.match(siteScript, /installTrigger\?\.addEventListener\('click', async/)
+  assert.match(siteScript, /isIosChrome = isIos && \/CriOS\//)
+  assert.match(siteScript, /In Chrome on iPhone or iPad: tap Share/)
   assert.match(siteScript, /deferredInstallPrompt\.prompt\(\)/)
   assert.doesNotMatch(siteScript, /window\.setTimeout\(showInstall/)
   assert.match(siteScript, /serviceWorker\.register\('\.\/sw\.js'\)/)

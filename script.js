@@ -42,6 +42,7 @@
     let deferredInstallPrompt = null;
     const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
     const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isIosChrome = isIos && /CriOS/.test(navigator.userAgent);
     const dismissInstall = () => {
       installOverlay.hidden = true;
     };
@@ -54,11 +55,13 @@
       return true;
     };
     const showManualInstructions = () => {
-      installHelp.textContent = isIos
-        ? 'Safari requires these steps: tap Share, choose Add to Home Screen, then tap Add. Apple does not allow websites to skip those confirmations.'
+      installHelp.textContent = isIosChrome
+        ? 'In Chrome on iPhone or iPad: tap Share to the right of the address bar, choose Add to Home Screen, then tap Add. iOS requires these confirmations.'
+        : isIos
+          ? 'In Safari: tap Share, choose Add to Home Screen, then tap Add. iOS requires these confirmations.'
         : 'Your browser does not offer one-tap installation here. Open its menu and choose Add to Home screen or Install app.';
       installHelp.hidden = false;
-      installButton.textContent = 'Close instructions';
+      installButton.textContent = 'Got it';
       installOverlay.hidden = false;
       installOverlay.querySelector('.install-app-close')?.focus();
     };

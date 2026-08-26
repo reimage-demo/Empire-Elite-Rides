@@ -33,6 +33,7 @@ export default defineSchema({
     paymentExpiresAt: v.optional(v.number()),
     paidAt: v.optional(v.number()),
     stripeCheckoutSessionId: v.optional(v.string()),
+    stripeCheckoutUrl: v.optional(v.string()),
     stripePaymentIntentId: v.optional(v.string()),
     stripeCustomerId: v.optional(v.string()),
     quoteId: v.optional(v.id('rideQuotes')),
