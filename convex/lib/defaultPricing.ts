@@ -1,0 +1,83 @@
+export const OPERATING_BASE_ADDRESS = '2603 2nd Ave, Watervliet, NY 12189'
+export const DEFAULT_TIMEZONE = 'America/New_York'
+
+// OWNER REVIEW REQUIRED: these are visible, versioned starting placeholders—not approved rates.
+export const DEFAULT_PRICING = {
+  ownerReviewRequired: true,
+  currency: 'USD',
+  baseServiceFeeCents: 0,
+  passengerPerMileCents: 350,
+  passengerPerMinuteCents: 80,
+  positioningPerMileCents: 150,
+  positioningPerMinuteCents: 30,
+  returnPerMileCents: 150,
+  returnPerMinuteCents: 30,
+  positioningMileageChargeBps: 10000,
+  positioningTimeChargeBps: 10000,
+  returnMileageChargeBps: 10000,
+  returnTimeChargeBps: 10000,
+  includedPositioningRadiusMiles: 3,
+  maximumPositioningChargeCents: 10000,
+  minimumFareCents: 0,
+  eventMinimumFareCents: 25000,
+  minimumHourlyBookingMinutes: 180,
+  hourlyRateCents: 15000,
+  includedMiles: 0,
+  includedMinutes: 0,
+  roundTripDiscountEnabled: true,
+  roundTripDiscountPercentageBps: 1500,
+  // Local market rates are calibrated to the owner-provided $31 Uber benchmark:
+  // 6.3 miles and 12 minutes prices at $37.20, exactly 20% higher.
+  localMarketPricingEnabled: true,
+  localMarketPerMileCents: 400,
+  localMarketPerMinuteCents: 100,
+  localMarketAllowBelowCostFloor: true,
+  // Competitive long-distance promotion. It protects local-trip pricing while
+  // offering a market-matched rate on passenger routes of 25 miles or more.
+  competitiveLongDistanceEnabled: true,
+  competitiveLongDistanceThresholdMiles: 25,
+  competitiveLongDistanceBaseFeeCents: 2000,
+  competitiveLongDistanceFirstTierPerMileCents: 250,
+  competitiveLongDistancePerMileCents: 95,
+  competitiveLongDistancePerMinuteCents: 25,
+  competitiveLongDistanceMaximumPositioningChargeCents: 0,
+  competitiveLongDistanceAllowBelowCostFloor: true,
+  competitiveLongDistanceRequiresReview: true,
+  waitTimeGraceMinutes: 0,
+  waitTimePerMinuteCents: 125,
+  maximumAutomaticWaitMinutes: 120,
+  additionalStopFeeCents: 2500,
+  includedStops: 0,
+  stopDurationAllowanceMinutes: 10,
+  airportFeeCents: 1000,
+  gratuityPercentageBps: 0,
+  taxPercentageBps: 0,
+  homepageQuoteExpirationMinutes: 15,
+  bookingQuoteExpirationMinutes: 10,
+  cleaningBufferMinutes: 45,
+  preparationBufferMinutes: 30,
+  driverBreakBufferMinutes: 30,
+  limitedAvailabilityThresholdMinutes: 90,
+  confirmationRequiredThresholdMinutes: 45,
+  limitedAvailabilityAdjustmentCents: 2000,
+  manualReviewDistanceMiles: 150,
+  maximumPickupDistanceMiles: 100,
+  maximumTotalRouteMiles: 350,
+  allowedStates: ['NY', 'MA', 'CT', 'VT', 'NJ', 'PA'],
+  trafficFallbackBps: 11500,
+  fuelCostPerMileCents: 35,
+  vehicleWearPerMileCents: 65,
+  chauffeurLaborPerMinuteCents: 50,
+  cleaningCostCents: 2500,
+  targetMarginBps: 2500,
+  rushHourRules: [
+    { name: 'Morning rush', activeDays: [1, 2, 3, 4, 5], startTime: '06:30', endTime: '09:30', percentageBps: 750, flatCents: 0, appliesToPickup: true, overlapTriggers: true },
+    { name: 'Evening rush', activeDays: [1, 2, 3, 4, 5], startTime: '15:30', endTime: '18:30', percentageBps: 750, flatCents: 0, appliesToPickup: true, overlapTriggers: true }
+  ],
+  afterHoursRules: [
+    { name: 'Late night', startTime: '22:00', endTime: '24:00', percentageBps: 1000, flatCents: 0, manualApproval: false },
+    { name: 'Overnight', startTime: '00:00', endTime: '05:00', percentageBps: 1500, flatCents: 0, manualApproval: true },
+    { name: 'Early morning', startTime: '05:00', endTime: '07:00', percentageBps: 1000, flatCents: 0, manualApproval: false }
+  ],
+  demandRules: { active: true, nearbyBookingThreshold: 2, dailyBookingThreshold: 4, percentageBps: 500, flatCents: 0, maximumAdjustmentCents: 5000 }
+}

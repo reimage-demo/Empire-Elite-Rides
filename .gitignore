@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env.local
+.DS_Store
+.vscode/
+
+# The admin portal is maintained in its own repository.
+admin-portal/

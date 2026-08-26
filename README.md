@@ -3,24 +3,43 @@
 The project has three deliberately separate layers:
 
 - The public site is static HTML, CSS, and JavaScript at the project root.
-- `convex/` is the shared root-level backend used by both the public booking form and the admin portal.
+- `convex/` is the shared backend used by the public booking form and admin portal.
 - `admin-portal/` is the private Vite/React administration interface.
 
-## Connect the production Convex deployment
+## Production
 
-The project is connected to the existing **Empire Elite Rides** Convex project. Its functions are deployed to production at `https://bold-okapi-506.convex.cloud`, and both clients use that deployment.
+Both clients use the Empire Elite Rides production Convex deployment. Administrator
+credentials remain server-side. Password verification uses the following production
+environment variables:
 
-The protected admin credentials have been set in Convex production (they remain server-side). To rotate them later:
+- `ADMIN_USERNAME`
+- `ADMIN_PASSWORD_ALGORITHM`
+- `ADMIN_PASSWORD_ITERATIONS`
+- `ADMIN_PASSWORD_HASH`
+- `ADMIN_PASSWORD_SALT`
+- `ADMIN_PASSWORD_PEPPER`
 
-   ```sh
-   npx convex env set ADMIN_USERNAME williamfarrar
-   npx convex env set ADMIN_PASSWORD '<new-password>'
-   ```
+There is no plaintext administrator password variable.
 
-Pushover booking notifications use the protected Convex environment variables `PUSHOVER_API_TOKEN` and `PUSHOVER_USER_KEY`. Both development and production deployments are configured. Rotate either value with `npx convex env set` and add `--prod` for production.
+Pushover booking notifications use protected production environment variables.
+Provider credentials must remain server-side and must never be added to browser code.
 
-The admin portal includes a **New Booking** view. Admin-created bookings use the same conflict and availability checks as public requests, are confirmed immediately, and trigger the same Pushover notification action.
+## Development
 
-Run `npm run convex:deploy` from the project root when shared backend functions change. Run `npm run admin:build` from the root (or `npm run build` inside `admin-portal/`) for admin UI changes. Serve the public files from the project root; do not open the HTML through `file://` because the booking page imports the Convex browser client as an ES module.
+- Run `npm test` for the contract and pricing test suite.
+- Run `npm run convex:deploy` when shared backend functions change.
+- Run `npm run admin:build` for admin interface changes.
+- Serve public files over HTTP; do not open them through `file://`.
 
-The `bookings:create` mutation rejects overlapping reservations and maintains a two-hour buffer after every active booking. Cancelled bookings release their times.
+The admin portal’s booking workflow uses the same conflict and availability checks as
+public requests. The backend rejects overlapping reservations and keeps a two-hour
+buffer after active bookings; cancelled bookings release their times.
+
+## Pricing
+
+The public homepage and booking page share the Convex pricing pipeline. The backend
+owns routes, quote pricing, expiration checks, vehicle conflicts, versioned pricing
+snapshots, and audit history.
+
+See [PRICING_SETUP.md](PRICING_SETUP.md) for provider setup, pricing configuration,
+webhook configuration, and deployment order.
