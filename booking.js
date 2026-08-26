@@ -1,4 +1,4 @@
-import { backendMessage, convexClient, customerSessionId, initAddressAutocomplete, money, warmPricingClient } from './pricing-client.js';
+import { backendMessage, convexClient, customerSessionId, initAddressAutocomplete, initCurrentLocation, initTimePicker, money, warmPricingClient } from './pricing-client.js';
 
 warmPricingClient();
 
@@ -22,6 +22,9 @@ if (form) {
   const bookingAddDropoffDate = bookingDateRange.querySelector('[data-add-dropoff-date]');
   const bookingRemoveDropoffDate = bookingDateRange.querySelector('[data-remove-dropoff-date]');
   const bookingDropoffDateField = bookingDateRange.querySelector('[data-dropoff-date-field]');
+  const bookingReturnTimeField = bookingDateRange.querySelector('[data-return-time-field]');
+  const bookingPickupTimePicker = initTimePicker(form.elements.pickupTime, { onChange: invalidateQuote });
+  const bookingReturnTimePicker = initTimePicker(form.elements.returnTime, { onChange: invalidateQuote });
   const bookingCalendar = document.querySelector('#booking-range-calendar');
   const bookingCalendarMonths = bookingCalendar.querySelector('[data-calendar-months]');
   const bookingCalendarPeriod = bookingCalendar.querySelector('[data-calendar-period]');
@@ -35,6 +38,7 @@ if (form) {
   const bookingProgressSegments = [...bookingProgress.querySelectorAll('span')];
   const bookingStepCount = form.querySelector('[data-step-count]');
   const bookingStepName = form.querySelector('[data-step-name]');
+  const estimateTransferNote = form.querySelector('[data-estimate-transfer-note]');
   const bookingStepNames = ['Route', 'Schedule', 'Optional details', 'Contact', 'Review & pay'];
   const bookingMonthFormatter = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' });
   const bookingDateFormatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -54,17 +58,18 @@ if (form) {
   let expirationTimer = null;
   const pendingCheckoutKey = 'eer-pending-checkout';
 
-  const pickup = initAddressAutocomplete(form.elements.pickupAddress, document.querySelector('#booking-pickup-suggestions'), { onInvalidate: invalidateQuote });
+  const pickup = initAddressAutocomplete(form.elements.pickupAddress, document.querySelector('#booking-pickup-suggestions'), { onInvalidate: invalidateQuote, onSelect: invalidateQuote });
   const dropoff = initAddressAutocomplete(form.elements.dropoffAddress, document.querySelector('#booking-dropoff-suggestions'), { onInvalidate: invalidateQuote });
   const returnPickup = initAddressAutocomplete(form.elements.returnPickupAddress, document.querySelector('#return-pickup-suggestions'), { onInvalidate: invalidateQuote });
   const returnDropoff = initAddressAutocomplete(form.elements.returnDropoffAddress, document.querySelector('#return-dropoff-suggestions'), { onInvalidate: invalidateQuote });
+  initCurrentLocation(form.querySelector('[data-use-current-location]'), pickup, form.querySelector('[data-location-status]'));
 
   function newYorkToday() {
     return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
   }
   function defaultTime() {
     const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date()).reduce((map, part) => ({ ...map, [part.type]: part.value }), {});
-    const minutes = Math.ceil((Number(parts.hour) * 60 + Number(parts.minute) + 60) / 30) * 30;
+    const minutes = Math.ceil((Number(parts.hour) * 60 + Number(parts.minute) + 60) / 15) * 15;
     return minutes < 1440 ? `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}` : '09:00';
   }
   function bookingDateFromIso(value) {
@@ -87,6 +92,9 @@ if (form) {
     bookingAddDropoffDate.hidden = bookingDropoffEnabled;
     bookingAddDropoffDate.setAttribute('aria-expanded', String(bookingDropoffEnabled));
     bookingDropoffDateField.hidden = !bookingDropoffEnabled;
+    bookingReturnTimeField.hidden = !bookingDropoffEnabled;
+    form.elements.returnTime.required = bookingDropoffEnabled;
+    if (!bookingDropoffEnabled) bookingReturnTimePicker.setValue('');
   }
   function renderBookingMonth(monthDate, minimumDate) {
     const section = document.createElement('section'); section.className = 'range-calendar-month';
@@ -116,7 +124,7 @@ if (form) {
     bookingCalendarPeriod.textContent = `${bookingMonthFormatter.format(bookingVisibleMonth)} – ${bookingMonthFormatter.format(secondMonth)}`;
     bookingPreviousMonth.disabled = bookingVisibleMonth <= bookingMonthStart(bookingDateFromIso(minimumDate));
     const complete = Boolean(bookingDraftStart && (!bookingDropoffEnabled || bookingDraftEnd));
-    bookingCalendarInstruction.textContent = !bookingDraftStart ? 'Choose your pickup date.' : bookingDropoffEnabled && !bookingDraftEnd ? 'Choose your drop-off date.' : `Date${bookingDropoffEnabled ? 's' : ''} selected. Press ✓ Apply to confirm.`;
+    bookingCalendarInstruction.textContent = !bookingDraftStart ? 'Choose your pickup date.' : bookingDropoffEnabled && !bookingDraftEnd ? 'Choose your return date.' : `Date${bookingDropoffEnabled ? 's' : ''} selected. Press ✓ Apply to confirm.`;
     bookingApplyDates.disabled = !complete;
     bookingApplyDates.innerHTML = `<span aria-hidden="true">✓</span> Apply date${bookingDropoffEnabled ? 's' : ''}`;
   }
@@ -186,8 +194,14 @@ if (form) {
     const step = bookingSteps[index];
     setStepMessage(step);
     if (index === 1 && (!bookingCommittedStart || (bookingDropoffEnabled && !bookingCommittedEnd))) {
-      setStepMessage(step, bookingDropoffEnabled ? 'Choose and apply the drop-off date before continuing.' : 'Choose and apply the pickup date before continuing.');
+      setStepMessage(step, bookingDropoffEnabled ? 'Choose and apply the return date before continuing.' : 'Choose and apply the pickup date before continuing.');
       openBookingCalendar(bookingDropoffEnabled && bookingCommittedStart ? 'end' : 'start', bookingDropoffEnabled && bookingCommittedStart ? bookingDropoffDateDisplay : bookingPickupDateDisplay);
+      return false;
+    }
+    if (index === 1 && (!bookingPickupTimePicker.getValue() || (bookingDropoffEnabled && !bookingReturnTimePicker.getValue()))) {
+      const missingPickupTime = !bookingPickupTimePicker.getValue();
+      setStepMessage(step, missingPickupTime ? 'Choose a pickup time before continuing.' : 'Choose a return time before continuing.');
+      (missingPickupTime ? bookingPickupTimePicker : bookingReturnTimePicker).focus();
       return false;
     }
     const invalidControl = firstInvalidControl(step);
@@ -261,12 +275,13 @@ if (form) {
       roundTripDetails = { pickup: returnPickupValue, dropoff: returnDropoffValue, date: form.elements.returnDate.value, time: form.elements.returnTime.value };
     }
     const airportEnabled = form.elements.airportService.value !== 'none';
+    if (airportEnabled && (!form.elements.airline.value || !form.elements.flightNumber.value.trim())) throw new Error('Choose the airline and enter the flight number.');
     return {
       sessionId: customerSessionId(), estimateId: estimateId || undefined,
       pickup: pickupValue, dropoff: dropoffValue, pickupDate: form.elements.pickupDate.value, pickupTime: form.elements.pickupTime.value,
       tripType: form.elements.tripType.value, passengerCount: Number(form.elements.passengerCount.value), luggageCount: Number(form.elements.luggageCount.value),
       stops: selectedStops(), requestedWaitMinutes: Number(form.elements.requestedWaitMinutes.value), roundTripDetails,
-      airportOptions: airportEnabled ? { enabled: true, direction: form.elements.airportService.value, flightNumber: form.elements.flightNumber.value.trim(), meetAndGreet: form.elements.meetAndGreet.checked, parkingEstimateCents: form.elements.airportService.value === 'pickup' ? 2000 : 0 } : undefined,
+      airportOptions: airportEnabled ? { enabled: true, direction: form.elements.airportService.value, airline: form.elements.airline.value, flightNumber: form.elements.flightNumber.value.trim().toUpperCase() } : undefined,
       hourlyDetails: form.elements.tripType.value === 'hourly' ? { hours: Number(form.elements.hourlyHours.value) } : undefined,
       eventOptions: ['Weddings', 'Special Events'].includes(form.elements.eventType.value) ? { enabled: true, eventType: form.elements.eventType.value } : undefined,
       promotionCode: form.elements.promotionCode.value.trim() || undefined
@@ -368,7 +383,8 @@ if (form) {
   }
 
   async function loadEstimate() {
-    const id = new URLSearchParams(location.search).get('estimateId');
+    const searchParams = new URLSearchParams(location.search);
+    const id = searchParams.get('estimateId');
     if (!id) return;
     quoteMessage.textContent = 'Loading your homepage estimate…';
     try {
@@ -378,28 +394,44 @@ if (form) {
       estimateId = estimate.estimateId;
       pickup.setSelection(estimate.pickup); dropoff.setSelection(estimate.dropoff);
       setBookingDates(estimate.pickupDate, estimate.dropoffDate || '');
-      if (estimate.dropoffDate) { form.elements.tripType.value = 'round_trip'; setRoundTripMode(true, { syncDatePicker: false, notify: false }); }
-      form.elements.pickupTime.value = estimate.pickupTime;
+      if (estimate.dropoffDate) {
+        form.elements.tripType.value = 'round_trip';
+        setRoundTripMode(true, { syncDatePicker: false, notify: false });
+        returnPickup.setSelection(estimate.dropoff);
+        returnDropoff.setSelection(estimate.pickup);
+      }
+      bookingPickupTimePicker.setValue(estimate.pickupTime);
+      const returnTime = searchParams.get('returnTime') || '';
+      if (estimate.dropoffDate) bookingReturnTimePicker.setValue(returnTime);
+      const scheduleComplete = Boolean(estimate.pickupDate && estimate.pickupTime && (!estimate.dropoffDate || returnTime));
+      estimateTransferNote.hidden = false;
+      showBookingStep(scheduleComplete ? 2 : 1, { focus: false, autoPrice: false });
       quoteMessage.textContent = 'Trip details were transferred securely. Add any options and calculate your official price.';
-    } catch { quoteMessage.textContent = 'The homepage estimate could not be loaded. Enter the trip details below.'; }
+    } catch {
+      quoteMessage.textContent = 'The homepage estimate could not be loaded. Enter the trip details below.';
+      showBookingStep(0, { focus: false, autoPrice: false });
+    }
   }
 
   function setRoundTripMode(roundTrip, { syncDatePicker = true, notify = true } = {}) {
     document.querySelector('#return-fields').hidden = !roundTrip;
     for (const input of document.querySelectorAll('#return-fields input')) input.required = roundTrip;
+    form.elements.returnTime.required = roundTrip;
     if (syncDatePicker) setBookingDropoffEnabled(roundTrip);
     if (notify) invalidateQuote();
   }
   function syncAirportDetails() {
     const enabled = form.elements.airportService.value !== 'none';
     form.querySelectorAll('[data-airport-detail]').forEach(field => { field.hidden = !enabled; });
+    form.elements.airline.required = enabled;
+    form.elements.flightNumber.required = enabled;
     if (!enabled) {
+      form.elements.airline.value = '';
       form.elements.flightNumber.value = '';
-      form.elements.meetAndGreet.checked = false;
     }
   }
 
-  setBookingDates(newYorkToday()); form.elements.pickupTime.value = defaultTime(); syncAirportDetails();
+  setBookingDates(newYorkToday()); bookingPickupTimePicker.setValue(defaultTime()); syncAirportDetails();
   bookingAddDropoffDate.addEventListener('click', () => {
     form.elements.tripType.value = 'round_trip';
     setRoundTripMode(true, { syncDatePicker: false, notify: false });

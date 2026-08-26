@@ -52,13 +52,23 @@
 
         <section class="booking-step" data-booking-step="0" aria-labelledby="booking-step-route">
           <div class="booking-step-heading"><p class="eyebrow">Your route</p><h2 id="booking-step-route" tabindex="-1">Where are you going?</h2><p>Start with the two addresses for this ride.</p></div>
-          <fieldset><legend>Route details</legend><div class="form-grid two">
-            <div class="address-field"><label for="booking-pickup">Pickup address *</label><input id="booking-pickup" name="pickupAddress" required placeholder="Start typing a full address"><div id="booking-pickup-suggestions" class="address-suggestions" role="listbox" hidden></div></div>
-            <div class="address-field"><label for="booking-dropoff">Drop-off address *</label><input id="booking-dropoff" name="dropoffAddress" required placeholder="Start typing a full address"><div id="booking-dropoff-suggestions" class="address-suggestions" role="listbox" hidden></div></div>
-            <label>Service type *<select name="tripType" required><option value="one_way">One-way trip</option><option value="round_trip">Round trip — save 15%</option><option value="hourly">Hourly chauffeur service</option></select></label>
-            <p class="roundtrip-savings-note"><strong>Save 15% with a return trip.</strong> Select Round trip now or add a return date on the next step.</p>
+          <fieldset><legend>Route details</legend>
+          <div class="booking-location-row">
+            <button class="use-location-button" type="button" data-use-current-location aria-describedby="booking-location-status"><span aria-hidden="true">⌖</span><span data-location-label>Use my location</span></button>
+            <p id="booking-location-status" class="location-status" data-location-status role="status" aria-live="polite" hidden></p>
           </div>
-          <div id="additional-stops" class="dynamic-fields"></div><button id="add-stop" class="inline-action" type="button">+ Add a stop</button>
+          <p class="price-impact-notice"><strong>Price note:</strong> Route distance, service type, and added stops can change your price.</p>
+          <div class="form-grid two">
+            <div class="address-field">
+              <label for="booking-pickup">Pickup address *</label>
+              <input id="booking-pickup" name="pickupAddress" required placeholder="Start typing a full address">
+              <div id="booking-pickup-suggestions" class="address-suggestions" role="listbox" hidden></div>
+            </div>
+            <div class="address-field"><label for="booking-dropoff">Drop-off address *</label><input id="booking-dropoff" name="dropoffAddress" required placeholder="Start typing a full address"><div id="booking-dropoff-suggestions" class="address-suggestions" role="listbox" hidden></div></div>
+            <label>Service type *<select name="tripType" required><option value="one_way">One-way trip</option><option value="round_trip">Round trip — save 15%</option><option value="hourly">Hourly chauffeur service</option></select><small class="price-impact-hint">Your service choice changes how the ride is priced.</small></label>
+            <p class="roundtrip-savings-note"><strong>Save 15% with a return trip.</strong> Return travel changes the total, and the round-trip discount is applied automatically.</p>
+          </div>
+          <div id="additional-stops" class="dynamic-fields"></div><div class="inline-action-group"><button id="add-stop" class="inline-action" type="button">+ Add a stop</button><small class="price-impact-hint">Each added stop may increase the price.</small></div>
           </fieldset>
           <p class="step-message" data-step-message role="status" aria-live="polite"></p>
           <div class="booking-step-actions"><button class="gold-button" type="button" data-step-next>Continue <span>→</span></button></div>
@@ -66,14 +76,16 @@
 
         <section class="booking-step" data-booking-step="1" aria-labelledby="booking-step-schedule" hidden>
           <div class="booking-step-heading"><p class="eyebrow">Your schedule</p><h2 id="booking-step-schedule" tabindex="-1">When should we arrive?</h2><p>Select your pickup date and time. Add a return only if you need one.</p></div>
-          <fieldset><legend>Date and time</legend><div class="form-grid two">
+          <fieldset><legend>Date and time</legend><p class="price-impact-notice"><strong>Price promise:</strong> Your selected date and time will not add a pricing adjustment.</p><div class="form-grid two">
             <div class="date-range-control booking-date-range" data-booking-date-range>
               <label for="booking-date-display">Pickup date *<input id="booking-date-display" class="date-range-display" type="text" placeholder="Select date" readonly aria-haspopup="dialog" aria-controls="booking-range-calendar" aria-expanded="false"></label>
+              <label class="time-field" for="booking-pickup-time">Pickup time *<select id="booking-pickup-time" class="time-select" name="pickupTime" data-time-picker required></select><span class="time-field-hint">15-minute intervals · Eastern Time</span></label>
               <button class="add-dropoff-date" type="button" data-add-dropoff-date aria-expanded="false"><span aria-hidden="true">+</span> Add a return date — save 15%</button>
               <div class="optional-date-field" data-dropoff-date-field hidden>
-                <div><label for="booking-dropoff-date-display">Drop-off date</label><button type="button" data-remove-dropoff-date>Remove</button></div>
+                <div><label for="booking-dropoff-date-display">Return date</label><button type="button" data-remove-dropoff-date>Remove</button></div>
                 <input id="booking-dropoff-date-display" class="date-range-display" type="text" placeholder="Select date" readonly aria-haspopup="dialog" aria-controls="booking-range-calendar" aria-expanded="false">
               </div>
+              <label class="time-field" for="booking-return-time" data-return-time-field hidden>Return time *<select id="booking-return-time" class="time-select" name="returnTime" data-time-picker></select><span class="time-field-hint">15-minute intervals · Eastern Time · Return travel changes the total</span></label>
               <input name="pickupDate" type="hidden">
               <input name="returnDate" type="hidden">
               <div id="booking-range-calendar" class="range-calendar" role="dialog" aria-modal="false" aria-labelledby="booking-range-calendar-title" hidden>
@@ -83,12 +95,10 @@
                 <div class="range-calendar-actions"><button type="button" data-calendar-cancel>Cancel</button><button type="button" data-calendar-apply><span aria-hidden="true">✓</span> Apply date</button></div>
               </div>
             </div>
-            <label>Pickup time *<input name="pickupTime" type="time" step="1800" required></label>
           </div></fieldset>
           <div id="return-fields" class="return-trip-fields" hidden><h3>Return trip details</h3><div class="form-grid two">
             <div class="address-field"><label for="return-pickup">Return pickup address *</label><input id="return-pickup" name="returnPickupAddress" placeholder="Start typing a full address"><div id="return-pickup-suggestions" class="address-suggestions" role="listbox" hidden></div></div>
             <div class="address-field"><label for="return-dropoff">Final drop-off address *</label><input id="return-dropoff" name="returnDropoffAddress" placeholder="Start typing a full address"><div id="return-dropoff-suggestions" class="address-suggestions" role="listbox" hidden></div></div>
-            <label>Return time *<input name="returnTime" type="time" step="1800"></label>
           </div></div>
           <p class="step-message" data-step-message role="status" aria-live="polite"></p>
           <div class="booking-step-actions"><button class="step-back" type="button" data-step-back>← Back</button><button class="gold-button" type="button" data-step-next>Continue <span>→</span></button></div>
@@ -96,16 +106,25 @@
 
         <section class="booking-step" data-booking-step="2" aria-labelledby="booking-step-ride" hidden>
           <div class="booking-step-heading"><p class="eyebrow">Optional details</p><h2 id="booking-step-ride" tabindex="-1">Anything else for the ride?</h2><p>Passenger, luggage, airport, and waiting details are optional. Skip this screen if you do not need them.</p></div>
+          <p class="estimate-transfer-note" data-estimate-transfer-note role="status" hidden><strong>Your route and schedule are already filled in.</strong> Continue here, or use Back if you want to edit them.</p>
           <fieldset><legend>Passengers and luggage</legend><div class="form-grid two">
             <label>Passengers *<input name="passengerCount" type="number" min="1" max="7" value="1" required></label>
             <label>Luggage pieces *<input name="luggageCount" type="number" min="0" max="12" value="0" required></label>
           </div></fieldset>
-          <fieldset><legend>Optional services</legend><div class="form-grid two">
-            <label>Requested waiting time<select name="requestedWaitMinutes"><option value="0">No waiting requested</option><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">1 hour</option><option value="90">1½ hours</option><option value="120">2 hours</option></select></label>
-            <label>Airport service<select name="airportService"><option value="none">No</option><option value="pickup">Airport pickup</option><option value="dropoff">Airport drop-off</option></select></label>
-            <label data-airport-detail hidden>Flight number<input name="flightNumber" maxlength="20" placeholder="Optional flight number"></label>
-            <label class="check-option" data-airport-detail hidden><input name="meetAndGreet" type="checkbox"><span>Meet-and-greet service</span></label>
-            <label id="hourly-field" hidden>Hours requested<input name="hourlyHours" type="number" min="3" max="14" step="0.5" value="3"></label>
+          <fieldset><legend>Optional services</legend><p class="price-impact-notice"><strong>Price promise:</strong> Your estimate stays the same unless you select the $10 airport service or add waiting time.</p><div class="form-grid two">
+            <label>Requested waiting time<select name="requestedWaitMinutes"><option value="0">No waiting requested</option><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">1 hour</option><option value="90">1½ hours</option><option value="120">2 hours</option></select><small class="price-impact-hint">The price increases only when you select waiting time.</small></label>
+            <label>Airport service<select name="airportService"><option value="none">No airport service</option><option value="pickup">Airport pickup — add $10</option><option value="dropoff">Airport drop-off — add $10</option></select><small class="price-impact-hint">Airport service adds one flat $10 fee. No parking or meet-and-greet fee.</small></label>
+            <label data-airport-detail hidden>Airline *<select name="airline">
+              <option value="">Choose an airline</option>
+              <optgroup label="Major and national airlines">
+                <option>Alaska Airlines</option><option>Allegiant Air</option><option>American Airlines</option><option>Avelo Airlines</option><option>Breeze Airways</option><option>Delta Air Lines</option><option>Frontier Airlines</option><option>Hawaiian Airlines</option><option>JetBlue Airways</option><option>Southwest Airlines</option><option>Spirit Airlines</option><option>Sun Country Airlines</option><option>United Airlines</option>
+              </optgroup>
+              <optgroup label="Regional and public charter airlines">
+                <option>Alaska Seaplanes</option><option>Boutique Air</option><option>Cape Air</option><option>Contour Airlines</option><option>Denver Air Connection</option><option>JSX</option><option>Kenmore Air</option><option>Mokulele Airlines</option><option>Southern Airways Express</option><option>Tradewind Aviation</option><option>Other U.S. airline</option>
+              </optgroup>
+            </select></label>
+            <label data-airport-detail hidden>Flight number *<input name="flightNumber" maxlength="20" pattern="[A-Za-z0-9 -]{2,20}" placeholder="Example: AA 1234"></label>
+            <label id="hourly-field" hidden>Hours requested<input name="hourlyHours" type="number" min="3" max="14" step="0.5" value="3"><small class="price-impact-hint">Additional hours increase the price.</small></label>
           </div></fieldset>
           <p class="step-message" data-step-message role="status" aria-live="polite"></p>
           <div class="booking-step-actions"><button class="step-back" type="button" data-step-back>← Back</button><button class="step-skip" type="button" data-step-skip>Skip optional details</button><button class="gold-button" type="button" data-step-next>Continue <span>→</span></button></div>

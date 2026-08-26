@@ -36,51 +36,44 @@
 
   const installOverlay = document.querySelector('[data-install-app]');
   if (installOverlay) {
-    const installKey = 'empireEliteInstallPromptDismissed';
     const installButton = installOverlay.querySelector('[data-install-confirm]');
     const installHelp = installOverlay.querySelector('[data-install-help]');
     const installTrigger = document.querySelector('[data-open-install]');
     let deferredInstallPrompt = null;
     const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
     const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const dismissInstall = (remember = true) => {
+    const dismissInstall = () => {
       installOverlay.hidden = true;
-      if (remember) localStorage.setItem(installKey, '1');
     };
-    const showInstall = () => {
-      if (standalone || localStorage.getItem(installKey)) return;
-      if (document.querySelector('.promotion-popup-overlay')) return window.setTimeout(showInstall, 1200);
+    const requestInstall = async () => {
+      if (!deferredInstallPrompt) return false;
+      deferredInstallPrompt.prompt();
+      const choice = await deferredInstallPrompt.userChoice;
+      deferredInstallPrompt = null;
+      if (choice.outcome === 'accepted') dismissInstall();
+      return true;
+    };
+    const showManualInstructions = () => {
+      installHelp.textContent = isIos
+        ? 'Safari requires these steps: tap Share, choose Add to Home Screen, then tap Add. Apple does not allow websites to skip those confirmations.'
+        : 'Your browser does not offer one-tap installation here. Open its menu and choose Add to Home screen or Install app.';
+      installHelp.hidden = false;
+      installButton.textContent = 'Close instructions';
       installOverlay.hidden = false;
       installOverlay.querySelector('.install-app-close')?.focus();
     };
     if (standalone && installTrigger) installTrigger.hidden = true;
-    installTrigger?.addEventListener('click', () => {
-      installHelp.hidden = true;
-      installOverlay.hidden = false;
-      installOverlay.querySelector('.install-app-close')?.focus();
+    installTrigger?.addEventListener('click', async () => {
+      if (await requestInstall()) return;
+      showManualInstructions();
     });
     window.addEventListener('beforeinstallprompt', event => {
       event.preventDefault();
       deferredInstallPrompt = event;
     });
     window.addEventListener('appinstalled', () => dismissInstall());
-    installButton?.addEventListener('click', async () => {
-      if (deferredInstallPrompt) {
-        deferredInstallPrompt.prompt();
-        const choice = await deferredInstallPrompt.userChoice;
-        deferredInstallPrompt = null;
-        if (choice.outcome === 'accepted') dismissInstall();
-        return;
-      }
-      installHelp.textContent = isIos
-        ? 'Tap the Share button in Safari, then choose Add to Home Screen.'
-        : 'Open your browser menu and choose Add to Home screen or Install app.';
-      installHelp.hidden = false;
-      installButton.textContent = 'Got it';
-      installButton.addEventListener('click', () => dismissInstall(), { once: true });
-    });
+    installButton?.addEventListener('click', async () => { if (!await requestInstall()) dismissInstall(); });
     installOverlay.querySelectorAll('[data-install-dismiss]').forEach(button => button.addEventListener('click', () => dismissInstall()));
-    window.setTimeout(showInstall, 1100);
   }
 
   const faqItems = document.querySelectorAll('.faq-list details');

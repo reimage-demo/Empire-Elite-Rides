@@ -1,4 +1,4 @@
-import { backendMessage, convexClient, customerSessionId, initAddressAutocomplete, money, warmPricingClient } from './pricing-client.js';
+import { backendMessage, convexClient, customerSessionId, initAddressAutocomplete, initCurrentLocation, initTimePicker, money, warmPricingClient } from './pricing-client.js';
 
 warmPricingClient();
 
@@ -7,13 +7,18 @@ if (form) {
   const result = document.querySelector('#quick-price-result');
   const status = document.querySelector('#quick-price-status');
   const submit = form.querySelector('button[type="submit"]');
-  const pickup = initAddressAutocomplete(form.elements.pickupAddress, document.querySelector('#quick-pickup-suggestions'), { onInvalidate: hideResult });
+  const pickup = initAddressAutocomplete(form.elements.pickupAddress, document.querySelector('#quick-pickup-suggestions'), { onInvalidate: hideResult, onSelect: hideResult });
   const dropoff = initAddressAutocomplete(form.elements.dropoffAddress, document.querySelector('#quick-dropoff-suggestions'), { onInvalidate: hideResult });
+  const quickPriceCard = form.closest('.quick-price-card');
+  initCurrentLocation(quickPriceCard.querySelector('[data-use-current-location]'), pickup, quickPriceCard.querySelector('[data-location-status]'));
   const pickupDateDisplay = document.querySelector('#quick-date-display');
   const dropoffDateDisplay = document.querySelector('#quick-dropoff-date-display');
   const addDropoffDateButton = form.querySelector('[data-add-dropoff-date]');
   const removeDropoffDateButton = form.querySelector('[data-remove-dropoff-date]');
   const dropoffDateField = form.querySelector('[data-dropoff-date-field]');
+  const returnTimeField = form.querySelector('[data-return-time-field]');
+  const pickupTimePicker = initTimePicker(form.elements.pickupTime, { onChange: hideResult });
+  const returnTimePicker = initTimePicker(form.elements.returnTime, { onChange: hideResult });
   const calendar = document.querySelector('#quick-range-calendar');
   const calendarMonths = calendar.querySelector('[data-calendar-months]');
   const calendarPeriod = calendar.querySelector('[data-calendar-period]');
@@ -59,6 +64,9 @@ if (form) {
     addDropoffDateButton.hidden = dropoffEnabled;
     addDropoffDateButton.setAttribute('aria-expanded', String(dropoffEnabled));
     dropoffDateField.hidden = !dropoffEnabled;
+    returnTimeField.hidden = !dropoffEnabled;
+    form.elements.returnTime.required = dropoffEnabled;
+    if (!dropoffEnabled) returnTimePicker.setValue('');
   }
   function renderMonth(monthDate, minimumDate) {
     const section = document.createElement('section'); section.className = 'range-calendar-month';
@@ -92,7 +100,7 @@ if (form) {
     calendarPeriod.textContent = `${monthFormatter.format(visibleMonth)} – ${monthFormatter.format(secondMonth)}`;
     previousMonthButton.disabled = visibleMonth <= monthStart(dateFromIso(minimumDate));
     const selectionComplete = Boolean(draftStart && (!dropoffEnabled || draftEnd));
-    calendarInstruction.textContent = !draftStart ? 'Choose your pickup date.' : dropoffEnabled && !draftEnd ? 'Choose your drop-off date.' : `Date${dropoffEnabled ? 's' : ''} selected. Press ✓ Apply to confirm.`;
+    calendarInstruction.textContent = !draftStart ? 'Choose your pickup date.' : dropoffEnabled && !draftEnd ? 'Choose your return date.' : `Date${dropoffEnabled ? 's' : ''} selected. Press ✓ Apply to confirm.`;
     applyCalendarButton.disabled = !selectionComplete;
     applyCalendarButton.innerHTML = `<span aria-hidden="true">✓</span> Apply date${dropoffEnabled ? 's' : ''}`;
   }
@@ -147,8 +155,8 @@ if (form) {
     visibleMonth = monthStart(dateFromIso(now.date));
     syncDropoffUi();
     syncDateInputs();
-    const rounded = Math.ceil((now.hour * 60 + now.minute + 60) / 30) * 30;
-    if (rounded < 1440 && committedStart === now.date) form.elements.pickupTime.value ||= `${String(Math.floor(rounded / 60)).padStart(2, '0')}:${String(rounded % 60).padStart(2, '0')}`;
+    const rounded = Math.ceil((now.hour * 60 + now.minute + 60) / 15) * 15;
+    if (rounded < 1440 && committedStart === now.date && !pickupTimePicker.getValue()) pickupTimePicker.setValue(`${String(Math.floor(rounded / 60)).padStart(2, '0')}:${String(rounded % 60).padStart(2, '0')}`);
   }
   function hideResult() { result.hidden = true; }
   configureDate();
@@ -187,8 +195,13 @@ if (form) {
       (!pickupValue ? form.elements.pickupAddress : form.elements.dropoffAddress).focus();
       return;
     }
+    if (!pickupTimePicker.getValue() || (dropoffEnabled && !returnTimePicker.getValue())) {
+      status.textContent = !pickupTimePicker.getValue() ? 'Choose a pickup time before getting a price.' : 'Choose a return time before getting a price.';
+      (!pickupTimePicker.getValue() ? pickupTimePicker : returnTimePicker).focus();
+      return;
+    }
     if (!committedStart || (dropoffEnabled && !committedEnd)) {
-      status.textContent = dropoffEnabled ? 'Choose and apply a drop-off date before getting a price.' : 'Choose and apply a pickup date before getting a price.';
+      status.textContent = dropoffEnabled ? 'Choose and apply a return date before getting a price.' : 'Choose and apply a pickup date before getting a price.';
       openCalendar(dropoffEnabled && committedStart ? 'end' : 'start', dropoffEnabled && committedStart ? dropoffDateDisplay : pickupDateDisplay);
       return;
     }
@@ -205,14 +218,15 @@ if (form) {
       status.textContent = quote.status === 'confirmation_required' ? 'Availability confirmation required' : '';
       result.querySelector('[data-estimate-price]').textContent = money(quote.estimatedPriceCents);
       result.querySelector('[data-estimate-route]').textContent = `${quote.pickupAddress} → ${quote.dropoffAddress}`;
-      const dateSummary = quote.dropoffDate ? `${displayDateFormatter.format(dateFromIso(quote.pickupDate))} – ${displayDateFormatter.format(dateFromIso(quote.dropoffDate))}` : displayDateFormatter.format(dateFromIso(quote.pickupDate));
-      result.querySelector('[data-estimate-when]').textContent = `${dateSummary} at ${quote.pickupTime}`;
+      const pickupSummary = `${displayDateFormatter.format(dateFromIso(quote.pickupDate))} at ${quote.pickupTime}`;
+      result.querySelector('[data-estimate-when]').textContent = quote.dropoffDate ? `${pickupSummary} · Return ${displayDateFormatter.format(dateFromIso(quote.dropoffDate))} at ${form.elements.returnTime.value}` : pickupSummary;
       result.querySelector('[data-estimate-distance]').textContent = `${quote.passengerMiles.toFixed(1)} passenger miles`;
       result.querySelector('[data-estimate-duration]').textContent = `About ${quote.passengerMinutes} passenger minutes`;
       const adjustments = result.querySelector('[data-estimate-adjustments]');
       adjustments.replaceChildren(...quote.customerBreakdown.map(line => { const item = document.createElement('li'); item.textContent = `${line.label}: ${money(line.amountCents)}`; return item; }));
       adjustments.hidden = !quote.customerBreakdown.length;
-      result.querySelector('[data-continue-booking]').href = `booking.html?estimateId=${encodeURIComponent(quote.estimateId)}`;
+      const returnTimeQuery = quote.dropoffDate ? `&returnTime=${encodeURIComponent(form.elements.returnTime.value)}` : '';
+      result.querySelector('[data-continue-booking]').href = `booking.html?estimateId=${encodeURIComponent(quote.estimateId)}${returnTimeQuery}`;
       result.hidden = false;
     } catch (error) {
       status.textContent = backendMessage(error, 'We could not calculate that trip. Please try again.');

@@ -40,6 +40,51 @@ export function money(cents) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(cents / 100);
 }
 
+function timeLabel(value) {
+  const [hourValue, minute] = value.split(':').map(Number);
+  const period = hourValue >= 12 ? 'PM' : 'AM';
+  const hour = hourValue % 12 || 12;
+  return `${hour}:${String(minute).padStart(2, '0')} ${period}`;
+}
+
+export function initTimePicker(select, { onChange } = {}) {
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = 'Select a time';
+  placeholder.disabled = true;
+  const groups = [
+    { name: 'Early morning', start: 0, end: 5 },
+    { name: 'Morning', start: 5, end: 12 },
+    { name: 'Afternoon', start: 12, end: 17 },
+    { name: 'Evening', start: 17, end: 24 }
+  ];
+  const groupElements = [];
+  for (const group of groups) {
+    const optionGroup = document.createElement('optgroup');
+    optionGroup.label = group.name;
+    for (let hour = group.start; hour < group.end; hour += 1) {
+      for (const minute of [0, 15, 30, 45]) {
+        const value = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = timeLabel(value);
+        optionGroup.append(option);
+      }
+    }
+    groupElements.push(optionGroup);
+  }
+  select.replaceChildren(placeholder, ...groupElements);
+  select.value = '';
+  function setValue(value, notify = false) {
+    select.value = value || '';
+    if (notify) {
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  }
+  select.addEventListener('change', () => onChange?.(select.value));
+  return { getValue: () => select.value, setValue, focus: () => select.focus() };
+}
+
 export function readableDate(date, time) {
   return new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', dateStyle: 'long', timeStyle: 'short' }).format(new Date(`${date}T${time}:00`));
 }
@@ -48,6 +93,60 @@ export function backendMessage(error, fallback) {
   const message = error?.data?.message || error?.message;
   if (!message || message.includes('[CONVEX') || message.includes('Server Error')) return fallback;
   return message;
+}
+
+export function initCurrentLocation(button, addressController, status, { onResolved } = {}) {
+  const label = button.querySelector('[data-location-label]');
+  const addressInput = button.closest('.address-field')?.querySelector('input') || button.closest('.quick-price-card, .booking-card')?.querySelector('[name="pickupAddress"]');
+  if (!navigator.geolocation) {
+    button.disabled = true;
+    button.title = 'Location is not available in this browser';
+    return;
+  }
+  function position() {
+    return new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, {
+      enableHighAccuracy: true,
+      timeout: 12000,
+      maximumAge: 60000
+    }));
+  }
+  function locationError(error) {
+    if (error?.code === 1) return 'Location access was denied. Allow location access or enter the pickup address manually.';
+    if (error?.code === 2) return 'Your current location is unavailable. Check your device settings or enter the address manually.';
+    if (error?.code === 3) return 'Finding your location took too long. Try again or enter the address manually.';
+    return 'We could not identify your current address. Please enter it manually.';
+  }
+  button.addEventListener('click', async () => {
+    button.disabled = true;
+    button.setAttribute('aria-busy', 'true');
+    button.classList.add('locating');
+    label.textContent = 'Locating…';
+    status.hidden = false;
+    status.className = 'location-status';
+    status.textContent = 'Finding your current pickup location…';
+    try {
+      const current = await position();
+      const client = await convexClient();
+      const place = await client.action('quotes:locateAddress', {
+        sessionId: customerSessionId(),
+        latitude: current.coords.latitude,
+        longitude: current.coords.longitude
+      });
+      addressController.setSelection(place);
+      status.className = 'location-status success';
+      status.textContent = 'Pickup address filled from your location. Please check that it is the correct entrance.';
+      onResolved?.(place);
+    } catch (error) {
+      status.className = 'location-status error';
+      status.textContent = [1, 2, 3].includes(error?.code) ? locationError(error) : backendMessage(error, locationError(error));
+    } finally {
+      button.disabled = false;
+      button.removeAttribute('aria-busy');
+      button.classList.remove('locating');
+      label.textContent = 'Use my location';
+    }
+  });
+  addressInput?.addEventListener('input', () => { status.hidden = true; });
 }
 
 export function initAddressAutocomplete(input, list, { onInvalidate, onSelect } = {}) {

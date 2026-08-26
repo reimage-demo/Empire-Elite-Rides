@@ -116,21 +116,32 @@
     <section id="ride-estimate" class="quick-price-section" aria-labelledby="quick-price-title">
       <div class="quick-price-heading"><p class="eyebrow">Plan your ride</p><h2 id="quick-price-title">Get a fast ride price.</h2><p>Enter your pickup, destination, and preferred time to receive a personalized ride estimate.</p></div>
       <div class="quick-price-card">
+        <button class="quick-install-action" type="button" data-open-install><img src="assets/images/branding/empire-elite-icon.png" alt=""><span><strong>Add to Home Screen</strong><small>Open booking faster next time</small></span><span class="quick-install-plus" aria-hidden="true">+</span></button>
+        <div class="quick-location-row">
+          <button class="use-location-button quick-location-action" type="button" data-use-current-location aria-describedby="quick-location-status"><span aria-hidden="true">⌖</span><span data-location-label>Use my location</span></button>
+          <p id="quick-location-status" class="location-status" data-location-status role="status" aria-live="polite" hidden></p>
+        </div>
         <form id="quick-price-form" class="quick-price-form">
-          <div class="address-field"><label for="quick-pickup">Pickup address</label><input id="quick-pickup" name="pickupAddress" required placeholder="Start typing a full address"><div id="quick-pickup-suggestions" class="address-suggestions" role="listbox" hidden></div></div>
+          <div class="address-field">
+            <label for="quick-pickup">Pickup address</label>
+            <input id="quick-pickup" name="pickupAddress" required placeholder="Start typing a full address">
+            <div id="quick-pickup-suggestions" class="address-suggestions" role="listbox" hidden></div>
+          </div>
           <div class="address-field"><label for="quick-dropoff">Drop-off address</label><input id="quick-dropoff" name="dropoffAddress" required placeholder="Start typing a full address"><div id="quick-dropoff-suggestions" class="address-suggestions" role="listbox" hidden></div></div>
           <div class="quick-date-range date-range-control" data-date-range>
             <label for="quick-date-display">Pickup date<input id="quick-date-display" class="date-range-display" type="text" placeholder="Select date" readonly aria-haspopup="dialog" aria-controls="quick-range-calendar" aria-expanded="false"></label>
+            <label class="time-field quick-time-field" for="quick-time">Pickup time<select id="quick-time" class="time-select" name="pickupTime" data-time-picker required></select><span class="time-field-hint">15-minute intervals · Eastern Time</span></label>
             <button class="add-dropoff-date" type="button" data-add-dropoff-date aria-expanded="false"><span aria-hidden="true">+</span> Add return date · save 15%</button>
             <div class="optional-date-field" data-dropoff-date-field hidden>
               <div><label for="quick-dropoff-date-display">Return date</label><button type="button" data-remove-dropoff-date>Remove</button></div>
               <input id="quick-dropoff-date-display" class="date-range-display" type="text" placeholder="Select date" readonly aria-haspopup="dialog" aria-controls="quick-range-calendar" aria-expanded="false">
             </div>
+            <label class="time-field quick-return-time-field" for="quick-return-time" data-return-time-field hidden>Return time<select id="quick-return-time" class="time-select" name="returnTime" data-time-picker></select><span class="time-field-hint">15-minute intervals · Eastern Time</span></label>
             <input id="quick-date" name="pickupDate" type="hidden">
             <input id="quick-dropoff-date" name="dropoffDate" type="hidden">
             <div id="quick-range-calendar" class="range-calendar" role="dialog" aria-modal="false" aria-labelledby="quick-range-calendar-title" hidden>
               <div class="range-calendar-top">
-                <div><strong id="quick-range-calendar-title">Select your dates</strong><span id="quick-range-calendar-instruction">Choose a pickup date, then a drop-off date.</span></div>
+                <div><strong id="quick-range-calendar-title">Select your dates</strong><span id="quick-range-calendar-instruction">Choose a pickup date, then a return date.</span></div>
                 <button class="range-calendar-close" type="button" aria-label="Close calendar">×</button>
               </div>
               <div class="range-calendar-nav">
@@ -145,11 +156,9 @@
               </div>
             </div>
           </div>
-          <p class="quick-roundtrip-note"><strong>Save 15% when you book a round trip.</strong> Add a return date and the discount is applied automatically.</p>
-          <label class="quick-time-field" for="quick-time">Pickup time<input id="quick-time" name="pickupTime" type="time" step="1800" required></label>
           <div class="quick-submit-actions">
+            <p class="quick-roundtrip-note"><strong>Save 15% when you book a round trip.</strong> Add a return date and the discount is applied automatically.</p>
             <button class="gold-button" type="submit">Get Price</button>
-            <button class="quick-install-action" type="button" data-open-install><img src="assets/images/branding/empire-elite-icon.png" alt=""> Add to Home Screen</button>
           </div>
         </form>
         <p id="quick-price-status" class="quote-status" role="status" aria-live="polite"></p>
