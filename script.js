@@ -38,6 +38,7 @@
   if (installOverlay) {
     const installButton = installOverlay.querySelector('[data-install-confirm]');
     const installHelp = installOverlay.querySelector('[data-install-help]');
+    const installWalkthrough = installOverlay.querySelector('[data-install-walkthrough]');
     const installTrigger = document.querySelector('[data-open-install]');
     let deferredInstallPrompt = null;
     const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
@@ -45,6 +46,7 @@
     const isIosChrome = isIos && /CriOS/.test(navigator.userAgent);
     const dismissInstall = () => {
       installOverlay.hidden = true;
+      installOverlay.classList.remove('is-manual');
     };
     const requestInstall = async () => {
       if (!deferredInstallPrompt) return false;
@@ -56,12 +58,14 @@
     };
     const showManualInstructions = () => {
       installHelp.textContent = isIosChrome
-        ? 'In Chrome on iPhone or iPad: tap Share to the right of the address bar, choose Add to Home Screen, then tap Add. iOS requires these confirmations.'
+        ? 'Chrome on iPhone or iPad: follow these three quick steps.'
         : isIos
-          ? 'In Safari: tap Share, choose Add to Home Screen, then tap Add. iOS requires these confirmations.'
-        : 'Your browser does not offer one-tap installation here. Open its menu and choose Add to Home screen or Install app.';
+          ? 'Safari on iPhone or iPad: follow these three quick steps.'
+          : 'Your browser does not offer one-tap installation here. Open its menu and choose Add to Home screen or Install app.';
       installHelp.hidden = false;
-      installButton.textContent = 'Got it';
+      if (installWalkthrough) installWalkthrough.hidden = !isIos;
+      installOverlay.classList.toggle('is-manual', isIos);
+      installButton.textContent = isIos ? 'Done' : 'Got it';
       installOverlay.hidden = false;
       installOverlay.querySelector('.install-app-close')?.focus();
     };

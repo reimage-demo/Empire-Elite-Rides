@@ -107,12 +107,23 @@ test('booking can be installed from the branded home-screen prompt', () => {
   assert.match(siteScript, /beforeinstallprompt/)
   assert.match(siteScript, /installTrigger\?\.addEventListener\('click', async/)
   assert.match(siteScript, /isIosChrome = isIos && \/CriOS\//)
-  assert.match(siteScript, /In Chrome on iPhone or iPad: tap Share/)
+  assert.match(siteScript, /Chrome on iPhone or iPad: follow these three quick steps/)
+  assert.match(siteScript, /installWalkthrough\.hidden = !isIos/)
   assert.match(siteScript, /deferredInstallPrompt\.prompt\(\)/)
   assert.doesNotMatch(siteScript, /window\.setTimeout\(showInstall/)
   assert.match(siteScript, /serviceWorker\.register\('\.\/sw\.js'\)/)
   assert.equal(JSON.parse(manifest).start_url, '/booking.html')
   assert.equal(JSON.parse(manifest).icons.some(icon => icon.sizes === '192x192'), true)
+})
+
+test('iPhone install help uses a branded three-picture walkthrough', () => {
+  assert.equal((home.match(/class="install-step-picture/g) || []).length, 3)
+  assert.equal((html.match(/class="install-step-picture/g) || []).length, 3)
+  assert.match(home, /Step 1[\s\S]*Tap Share/)
+  assert.match(home, /Step 2[\s\S]*Add to Home Screen/)
+  assert.match(home, /Step 3[\s\S]*Tap Add/)
+  assert.match(styles, /\.install-walkthrough \{ display: grid;/)
+  assert.match(styles, /\.install-walkthrough li \{ grid-template-columns: 122px 1fr;/)
 })
 
 test('round trips receive an admin-managed fifteen percent discount', () => {

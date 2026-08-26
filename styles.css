@@ -315,8 +315,9 @@ textarea { min-height: 120px; resize: vertical; }
 .form-message.error { color: #7d241d; border: 1px solid #e7b1aa; background: #fff1ef; }
 .form-message.success { color: #205d3b; border: 1px solid #a6d1b7; background: #effaf3; }
 .install-app-overlay[hidden] { display: none; }
-.install-app-overlay { position: fixed; z-index: 110; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(5,6,6,.72); backdrop-filter: blur(5px); }
-.install-app-prompt { position: relative; width: min(430px, 100%); padding: 38px 34px 30px; color: #fff; background: radial-gradient(circle at 85% 0,#3b3527,#111212 65%); border: 1px solid rgba(239,203,103,.5); box-shadow: 0 32px 90px rgba(0,0,0,.55); text-align: center; }
+.install-app-overlay { position: fixed; z-index: 110; inset: 0; display: grid; place-items: center; padding: 20px; overflow-y: auto; background: rgba(5,6,6,.72); backdrop-filter: blur(5px); }
+.install-app-prompt { position: relative; width: min(430px, 100%); max-height: calc(100dvh - 40px); padding: 38px 34px 30px; overflow-y: auto; color: #fff; background: radial-gradient(circle at 85% 0,#3b3527,#111212 65%); border: 1px solid rgba(239,203,103,.5); box-shadow: 0 32px 90px rgba(0,0,0,.55); text-align: center; }
+.install-app-overlay.is-manual .install-app-prompt { width: min(860px, 100%); }
 .install-app-prompt > img { width: 78px; height: 78px; margin: 0 auto 22px; border-radius: 18px; box-shadow: 0 12px 30px rgba(0,0,0,.35); }
 .install-app-prompt h2 { margin: 0; font-family: "Cormorant Garamond", Georgia, serif; font-size: 38px; font-weight: 600; line-height: 1; }
 .install-app-prompt > p:not(.eyebrow) { margin: 17px auto 23px; color: rgba(255,255,255,.7); font-size: 13px; }
@@ -324,6 +325,27 @@ textarea { min-height: 120px; resize: vertical; }
 .install-app-close { position: absolute; top: 10px; right: 12px; width: 40px; height: 40px; border: 1px solid rgba(255,255,255,.24); color: #fff; background: transparent; cursor: pointer; font-size: 25px; }
 .install-app-later { margin-top: 13px; padding: 8px 15px; border: 0; color: rgba(255,255,255,.62); background: transparent; cursor: pointer; text-transform: uppercase; letter-spacing: .14em; font-size: 8px; font-weight: 700; }
 .install-app-help { padding: 12px; color: #f5d985 !important; background: rgba(255,255,255,.07); border: 1px solid rgba(239,203,103,.25); }
+.install-walkthrough[hidden] { display: none; }
+.install-walkthrough { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; margin: 0 0 22px; padding: 0; list-style: none; text-align: left; }
+.install-walkthrough li { display: grid; grid-template-rows: 134px auto; min-width: 0; overflow: hidden; border: 1px solid rgba(239,203,103,.28); background: rgba(255,255,255,.045); }
+.install-step-picture { position: relative; display: grid; align-items: end; padding: 12px; overflow: hidden; color: #171717; background: linear-gradient(160deg,#f8f6f0,#d8d5ce); }
+.mini-browser-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 35px; padding: 6px 8px 6px 12px; border: 1px solid #d3d0ca; border-radius: 18px; background: #fff; box-shadow: 0 5px 14px rgba(0,0,0,.1); }
+.mini-browser-bar span { overflow: hidden; color: #5b5b5b; font-size: 9px; white-space: nowrap; text-overflow: ellipsis; }
+.mini-browser-bar b { width: 25px; height: 25px; display: grid; place-items: center; border: 2px solid #c69320; border-radius: 50%; color: #8d6511; font-size: 18px; line-height: 1; }
+.mini-site-mark { position: absolute; top: 15px; left: 15px; display: flex; align-items: center; gap: 7px; }
+.mini-site-mark img { width: 31px; height: 31px; border-radius: 7px; }
+.mini-site-mark i { display: block; width: 42px; height: 5px; border-radius: 6px; background: #b7b3aa; }
+.mini-site-mark i:last-child { width: 22px; opacity: .65; }
+.menu-picture { align-items: center; }
+.mini-share-sheet { display: grid; gap: 7px; width: 100%; padding: 10px; border-radius: 14px 14px 5px 5px; background: rgba(255,255,255,.95); box-shadow: 0 9px 20px rgba(0,0,0,.15); }
+.mini-share-sheet > i { display: block; width: 100%; height: 7px; border-radius: 9px; background: #dedede; }
+.mini-share-sheet > i:nth-child(2) { width: 65%; }
+.mini-share-sheet div { display: grid; grid-template-columns: 24px 1fr auto; align-items: center; gap: 7px; margin: 2px -4px; padding: 8px 6px; color: #111; background: #fff5d8; outline: 2px solid #d3a029; }
+.mini-share-sheet div span { font-size: 18px; }.mini-share-sheet div b { font-size: 9px; }.mini-share-sheet div em { font-style: normal; font-size: 18px; }
+.add-picture { align-content: center; align-items: stretch; }
+.mini-add-header { display: flex; justify-content: space-between; margin-bottom: 17px; color: #3478c9; font-size: 10px; }.mini-add-header b { padding: 2px 8px; border-radius: 10px; color: #171717; background: #e8b63f; font-size: 10px; }
+.mini-app-preview { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 9px; background: rgba(255,255,255,.85); }.mini-app-preview img { width: 38px; height: 38px; border-radius: 9px; }.mini-app-preview span { font-size: 10px; font-weight: 750; }
+.install-step-copy { display: grid; align-content: start; gap: 4px; padding: 13px; }.install-step-copy > span { color: #dcb446; text-transform: uppercase; letter-spacing: .14em; font-size: 8px; font-weight: 800; }.install-step-copy strong { color: #fff; font-size: 13px; }.install-step-copy small { color: rgba(255,255,255,.62); font-size: 10px; line-height: 1.45; }
 
 .site-footer { display: grid; grid-template-columns: 1.35fr .7fr .8fr 1fr; gap: clamp(30px, 5vw, 80px); padding: 72px 5vw 30px; color: rgba(255,255,255,.72); background: #080909; border-top: 4px solid var(--gold); }
 .footer-brand img { width: 250px; height: auto; margin: -12px 0 18px; }
@@ -462,6 +484,17 @@ textarea { min-height: 120px; resize: vertical; }
   .booking-page .booking-step-actions .step-back, .booking-page .booking-step-actions .step-skip { padding: 8px 9px; font-size: 8px; }
   .install-app-prompt { padding: 34px 22px 24px; }
   .install-app-prompt h2 { font-size: 34px; }
+  .install-app-overlay { padding: 12px; }
+  .install-app-prompt { max-height: calc(100dvh - 24px); }
+  .install-app-overlay.is-manual .install-app-prompt > img { width: 56px; height: 56px; margin-bottom: 14px; border-radius: 13px; }
+  .install-app-overlay.is-manual .install-app-prompt h2 { font-size: 30px; }
+  .install-app-overlay.is-manual .install-app-prompt > p:not(.eyebrow) { margin: 11px auto 14px; }
+  .install-walkthrough { grid-template-columns: 1fr; gap: 9px; }
+  .install-walkthrough li { grid-template-columns: 122px 1fr; grid-template-rows: auto; min-height: 116px; }
+  .install-step-picture { min-height: 116px; padding: 9px; }
+  .mini-site-mark { top: 12px; left: 10px; }.mini-site-mark i:last-child { display: none; }.mini-site-mark i { width: 30px; }
+  .mini-browser-bar { padding-left: 8px; }.mini-browser-bar span { max-width: 62px; }
+  .install-step-copy { align-content: center; padding: 12px; }
   .booking-review-step .booking-quote { margin-left: -17px; margin-right: -17px; }
   .time-pair { grid-column: auto; }
   .submit-button { width: 100%; min-width: 0; }
