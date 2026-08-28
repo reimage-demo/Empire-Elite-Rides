@@ -289,8 +289,8 @@ textarea { min-height: 120px; resize: vertical; }
 .vehicle-choice:hover .vehicle-choice-card { transform: translateY(-2px); border-color: #b99a53; box-shadow: 0 18px 42px rgba(24,22,17,.14); }
 .vehicle-choice > input:focus-visible + .vehicle-choice-card { outline: 3px solid rgba(214,165,44,.32); outline-offset: 3px; }
 .vehicle-choice > input:checked + .vehicle-choice-card { border-color: #b78112; box-shadow: 0 0 0 2px #d6a52c, 0 18px 42px rgba(24,22,17,.14); }
-.vehicle-choice-image { display: block; aspect-ratio: 16 / 9; overflow: hidden; background: #111; }
-.vehicle-choice-image img { width: 100%; height: 100%; object-fit: cover; }
+.vehicle-choice-image { display: grid; aspect-ratio: 3 / 2; overflow: hidden; place-items: center; padding: 12px 18px 6px; background: radial-gradient(circle at 50% 55%, #fff 0, #f7f4ed 62%, #eee9df 100%); }
+.vehicle-choice-image img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .vehicle-choice-copy { display: grid; align-content: start; gap: 7px; padding: 18px; }
 .vehicle-choice-copy small { color: #9a7116; text-transform: uppercase; letter-spacing: .16em; font-size: 8px; font-weight: 800; }
 .vehicle-choice-copy strong { color: #201f1b; font-family: "Cormorant Garamond", Georgia, serif; font-size: 25px; line-height: 1.08; }
@@ -493,13 +493,13 @@ textarea { min-height: 120px; resize: vertical; }
   .booking-page .price-impact-notice { margin-bottom: 10px; padding: 8px 10px; font-size: 9px; }
   .booking-page .estimate-transfer-note { margin-top: 10px; padding: 9px 10px; font-size: 10px; }
   .booking-page .vehicle-choice-grid { grid-template-columns: 1fr; gap: 9px; }
-  .booking-page .vehicle-choice-card { grid-template-columns: 116px 1fr; min-height: 116px; }
-  .booking-page .vehicle-choice-image { height: 100%; min-height: 116px; aspect-ratio: auto; }
-  .booking-page .vehicle-choice-copy { gap: 4px; padding: 11px 38px 11px 12px; }
-  .booking-page .vehicle-choice-copy strong { font-size: 19px; }
-  .booking-page .vehicle-choice-copy > span { font-size: 9px; }
-  .booking-page .vehicle-choice-copy em { font-size: 9px; line-height: 1.35; }
-  .booking-page .vehicle-choice-check { top: 9px; right: 9px; width: 25px; height: 25px; }
+  .booking-page .vehicle-choice-card { grid-template-columns: 1fr; min-height: 0; }
+  .booking-page .vehicle-choice-image { height: auto; min-height: 0; aspect-ratio: 3 / 2; padding: 8px 12px 2px; }
+  .booking-page .vehicle-choice-copy { gap: 5px; padding: 13px 16px 16px; }
+  .booking-page .vehicle-choice-copy strong { font-size: 22px; }
+  .booking-page .vehicle-choice-copy > span { font-size: 10px; }
+  .booking-page .vehicle-choice-copy em { font-size: 9px; line-height: 1.45; }
+  .booking-page .vehicle-choice-check { top: 10px; right: 10px; width: 28px; height: 28px; }
   .booking-page .inline-action { min-height: 38px; margin-top: 10px; padding: 7px 11px; }
   .booking-page .dynamic-fields { margin-top: 10px; }
   .booking-page .step-message { min-height: 17px; margin: 8px 0 0; font-size: 10px; }

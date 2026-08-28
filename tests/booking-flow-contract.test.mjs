@@ -60,6 +60,14 @@ test('fleet choice is a required booking step and travels with the server-owned 
   assert.match(admin, /vehicleName\(row\)/)
 })
 
+test('vehicle picker shows uncropped transparent cars above their capacity details', () => {
+  assert.match(html, /assets\/images\/vehicle\/ford-expedition-transparent\.png/)
+  assert.match(html, /assets\/images\/vehicle\/lincoln-nautilus-whisper-blue-transparent\.png/)
+  assert.match(styles, /\.vehicle-choice-image img \{[^}]*object-fit: contain/)
+  assert.match(styles, /\.booking-page \.vehicle-choice-card \{ grid-template-columns: 1fr;/)
+  assert.match(styles, /\.booking-page \.vehicle-choice-image \{[^}]*aspect-ratio: 3 \/ 2;/)
+})
+
 test('direct booking keeps a centered location shortcut and aligned address fields', () => {
   const routeStep = html.match(/data-booking-step="0"[\s\S]*?data-booking-step="1"/)?.[0] || ''
   assert.match(routeStep, /booking-location-row[\s\S]*data-use-current-location/)
