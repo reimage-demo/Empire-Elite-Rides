@@ -9,7 +9,6 @@ if (form) {
   const formMessage = document.querySelector('#form-message');
   const quoteResult = document.querySelector('#booking-quote-result');
   const quotePlaceholder = document.querySelector('#booking-quote-placeholder');
-  const quoteButton = document.querySelector('#calculate-booking-price');
   const reserveButton = document.querySelector('#reserve-button');
   const paymentReturn = document.querySelector('#payment-return');
   const promotionStatus = document.querySelector('#promotion-code-status');
@@ -341,27 +340,28 @@ if (form) {
         ? "We're fully booked for this date. Please choose another date."
         : 'That pickup window is fully booked. Please choose a different time.'
       : quote.status === 'manual_review_required' ? 'This price requires staff confirmation. You can submit the request now.' : 'Your trip details and price are ready.';
-    reserveButton.textContent = quote.status === 'manual_review_required' ? 'Submit for Confirmation →' : `Pay ${money(quote.finalPriceCents)} Securely →`;
+    reserveButton.textContent = quote.status === 'manual_review_required' ? 'Submit for Confirmation →' : `Pay Now · ${money(quote.finalPriceCents)} →`;
     reserveButton.disabled = quote.status === 'rejected';
     const expiration = quoteResult.querySelector('[data-quote-expiration]');
     const tick = () => {
       const remaining = quote.expiresAt - Date.now();
-      if (remaining <= 0) { expiration.textContent = 'This quote has expired. Recalculate to continue.'; reserveButton.disabled = true; currentQuote = null; window.clearInterval(expirationTimer); }
+      if (remaining <= 0) { expiration.textContent = 'This quote has expired. Press Pay Now to refresh your price.'; reserveButton.textContent = 'Refresh Price & Pay →'; reserveButton.disabled = false; currentQuote = null; window.clearInterval(expirationTimer); }
       else expiration.textContent = `Quote expires in ${Math.floor(remaining / 60000)}:${String(Math.floor((remaining % 60000) / 1000)).padStart(2, '0')}`;
     };
     tick(); expirationTimer = window.setInterval(tick, 1000);
   }
 
   async function calculateQuote() {
-    quoteButton.disabled = true; applyPromotionButton.disabled = true; reserveButton.disabled = true; quoteMessage.textContent = 'Preparing your ride price…'; formMessage.textContent = '';
+    applyPromotionButton.disabled = true; reserveButton.disabled = true; quoteMessage.textContent = 'Preparing your ride price…'; formMessage.textContent = '';
     try {
       const client = await convexClient();
       renderQuote(await client.action('quotes:generateBookingQuote', quoteArgs()));
     } catch (error) {
       const message = backendMessage(error, 'We could not calculate this reservation. Review the details and try again.');
       quoteMessage.textContent = message;
+      reserveButton.textContent = 'Try Pay Now Again →'; reserveButton.disabled = false;
       if (form.elements.promotionCode.value.trim()) { promotionStatus.className = 'promotion-code-status error'; promotionStatus.textContent = message; }
-    } finally { quoteButton.disabled = false; applyPromotionButton.disabled = false; }
+    } finally { applyPromotionButton.disabled = false; }
   }
 
   function validCheckoutUrl(value) {
@@ -530,12 +530,14 @@ if (form) {
     invalidateQuote(); wrapper.querySelector('input').focus();
   });
 
-  quoteButton.addEventListener('click', calculateQuote);
   applyPromotionButton.addEventListener('click', calculateQuote);
 
   form.addEventListener('submit', async event => {
     event.preventDefault(); formMessage.className = 'form-message'; formMessage.textContent = '';
-    if (!currentQuote || currentQuote.expiresAt <= Date.now()) return showError(formMessage, 'Calculate a current official quote before continuing.');
+    if (!currentQuote || currentQuote.expiresAt <= Date.now()) {
+      await calculateQuote();
+      if (!currentQuote || currentQuote.expiresAt <= Date.now()) return showError(formMessage, 'We could not refresh your price. Please try Pay Now again.');
+    }
     const details = customer();
     if (details.phone.replace(/\D/g, '').length !== 10) return showError(formMessage, 'Enter a complete 10-digit phone number.');
     reserveButton.disabled = true; reserveButton.textContent = currentQuote.status === 'manual_review_required' ? 'Submitting request…' : 'Opening secure checkout…';

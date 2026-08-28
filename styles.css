@@ -250,7 +250,7 @@ img { display: block; max-width: 100%; }
 .return-trip-fields h3 { margin: 0 0 22px; text-align: center; font-family: "Cormorant Garamond", Georgia, serif; font-size: 28px; font-weight: 600; }
 .step-message { min-height: 22px; margin: 22px 0 0; color: #8b3029; text-align: center; font-size: 12px; font-weight: 650; }
 .booking-step-actions { display: flex; align-items: center; justify-content: center; gap: 18px; margin-top: 26px; }
-.booking-step-actions.final { justify-content: space-between; }
+.booking-step-actions.final { justify-content: space-between; margin-top: 38px; }
 .booking-step-actions .gold-button { cursor: pointer; }
 .step-back, .step-skip { min-height: 50px; padding: 10px 20px; border: 0; color: #625b4d; background: transparent; cursor: pointer; text-transform: uppercase; letter-spacing: .14em; font-size: 9px; font-weight: 750; }
 .step-skip { border-bottom: 1px solid #cdbf9d; color: #79580e; }
@@ -511,6 +511,7 @@ textarea { min-height: 120px; resize: vertical; }
     margin: 0; padding: 10px 15px max(10px, env(safe-area-inset-bottom));
     background: rgba(255,255,255,.97); border-top: 1px solid #ded9ce; box-shadow: 0 -12px 34px rgba(0,0,0,.1); backdrop-filter: blur(12px);
   }
+  .booking-page .booking-review-step { padding-bottom: 34px; }
   .booking-page .booking-step-actions:has(.step-skip) { grid-template-columns: minmax(76px, .65fr) minmax(0, 1.35fr); }
   .booking-page .booking-step-actions:has(.step-skip) .gold-button { grid-column: 1 / -1; grid-row: 1; }
   .booking-page .booking-step-actions:has(.step-skip) .step-back, .booking-page .booking-step-actions:has(.step-skip) .step-skip { grid-row: 2; }

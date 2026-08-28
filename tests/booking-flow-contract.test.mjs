@@ -29,6 +29,13 @@ test('booking validates each visible step and prices automatically on review', (
   assert.match(html, /data-step-next/)
 })
 
+test('final booking step has one clear pay action without a recalculate button', () => {
+  assert.doesNotMatch(html, /calculate-booking-price|Recalculate Price/)
+  assert.match(html, /id="reserve-button"[^>]*>Pay Now/)
+  assert.match(script, /Pay Now · \$\{money\(quote\.finalPriceCents\)\}/)
+  assert.match(styles, /\.booking-step-actions\.final \{[^}]*margin-top: 38px;/)
+})
+
 test('mobile booking keeps navigation visible in a single app-style screen', () => {
   assert.match(html, /<body class="booking-page">/)
   assert.match(styles, /\.booking-page \.booking-intro, \.booking-page \.site-footer \{ display: none; \}/)

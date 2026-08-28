@@ -164,15 +164,14 @@
             <div id="booking-quote-placeholder"><p>Preparing your official price…</p></div>
             <div id="booking-quote-result" hidden><strong data-booking-total></strong><p data-booking-quote-label></p><p class="booking-vehicle-summary" data-booking-vehicle></p><p class="applied-promotion" data-booking-promotion hidden></p><dl data-booking-breakdown></dl><p class="quote-expiration" data-quote-expiration></p></div>
             <p id="quote-message" class="quote-status" role="status" aria-live="polite"></p>
-            <button id="calculate-booking-price" class="gold-button" type="button">Recalculate Price <span>↻</span></button>
           </section>
           <section class="reservation-submit">
-            <div class="promotion-code-box"><div><strong>Have a discount code?</strong><p>Enter it before payment and recalculate your final price.</p></div><label for="promotion-code">Discount code<input id="promotion-code" name="promotionCode" maxlength="30" autocomplete="off" placeholder="ELITE-XXXXXXX"></label><button id="apply-promotion-code" class="inline-action" type="button">Apply code</button><p id="promotion-code-status" role="status" aria-live="polite"></p></div>
+            <div class="promotion-code-box"><div><strong>Have a discount code?</strong><p>Enter it before payment to update your final price.</p></div><label for="promotion-code">Discount code<input id="promotion-code" name="promotionCode" maxlength="30" autocomplete="off" placeholder="ELITE-XXXXXXX"></label><button id="apply-promotion-code" class="inline-action" type="button">Apply code</button><p id="promotion-code-status" role="status" aria-live="polite"></p></div>
             <label class="final-notes">Notes <span>Optional</span><textarea name="notes" maxlength="1000" placeholder="Flight number, accessibility needs, or anything else we should know"></textarea></label>
             <div class="form-data-notice"><strong>Secure Stripe Checkout</strong><p>Instant quotes are paid in full through Stripe’s hosted checkout. Trips requiring staff review are submitted without payment until approved. Empire Elite Rides never receives your card details. Read our <a href="privacy.html">Privacy &amp; Data Policy</a>.</p></div>
             <label class="consent"><input name="consent" type="checkbox" required><span>I agree to the reservation terms, authorize Empire Elite Rides to contact me about this service, and understand that an instant quote is charged in full through Stripe Checkout.</span></label>
             <div id="form-message" class="form-message" role="status" aria-live="polite"></div>
-            <div class="booking-step-actions final"><button class="step-back" type="button" data-step-back>← Back</button><button id="reserve-button" class="gold-button submit-button" type="submit" disabled>Continue to Secure Payment <span>→</span></button></div>
+            <div class="booking-step-actions final"><button class="step-back" type="button" data-step-back>← Back</button><button id="reserve-button" class="gold-button submit-button" type="submit" disabled>Pay Now <span>→</span></button></div>
           </section>
         </section>
       </form>
