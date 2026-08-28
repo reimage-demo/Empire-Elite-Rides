@@ -45,7 +45,8 @@ export const prepareCheckout = internalMutation({
         return {
           bookingId: existing._id, confirmationCode: existing.confirmationCode,
           email: existing.email!, amountCents: existing.paymentAmountCents!, currency: existing.paymentCurrency!,
-          paymentExpiresAt: existing.paymentExpiresAt, promotion: existing.promotionSnapshot
+          paymentExpiresAt: existing.paymentExpiresAt, promotion: existing.promotionSnapshot,
+          vehicleName: existing.vehicleSnapshot?.name
         }
       }
       fail('CHECKOUT_EXPIRED', 'This payment session expired. Recalculate the trip to continue.')
@@ -65,8 +66,8 @@ export const prepareCheckout = internalMutation({
       promotion = rawPromotion
     }
 
-    const activeBookings = (await ctx.db.query('bookings').collect()).filter(row => bookingBlocksAvailability(row, now))
-    const activeBlocks = await ctx.db.query('blackoutPeriods').withIndex('by_active', query => query.eq('active', true)).collect()
+    const activeBookings = (await ctx.db.query('bookings').collect()).filter(row => bookingBlocksAvailability(row, now) && (!quote.vehicleId || !row.vehicleId || row.vehicleId === quote.vehicleId))
+    const activeBlocks = (await ctx.db.query('blackoutPeriods').withIndex('by_active', query => query.eq('active', true)).collect()).filter(row => !row.vehicleId || !quote.vehicleId || row.vehicleId === quote.vehicleId)
     const conflict = [
       ...activeBookings.map(row => ({ startAt: row.startAt, endAt: row.endAt })),
       ...activeBlocks.map(row => ({ startAt: row.startAt, endAt: row.endAt }))
@@ -98,6 +99,8 @@ export const prepareCheckout = internalMutation({
       paymentCurrency: 'usd', paymentExpiresAt,
       quoteId: quote._id, estimateId: quote.estimateId,
       promotionId: quote.promotionId,
+      vehicleId: quote.vehicleId,
+      vehicleSnapshot: quote.vehicleSnapshot,
       routeSnapshot: quote.routeSnapshot,
       promotionSnapshot: quote.promotionSnapshot,
       pricingSnapshot: {
@@ -117,7 +120,8 @@ export const prepareCheckout = internalMutation({
     return {
       bookingId, confirmationCode: code, email: args.customer.email.trim().toLowerCase(),
       amountCents: quote.finalPriceCents, currency: 'usd', paymentExpiresAt,
-      promotion: quote.promotionSnapshot
+      promotion: quote.promotionSnapshot,
+      vehicleName: quote.vehicleSnapshot?.name
     }
   }
 })
@@ -139,7 +143,8 @@ export const prepareAdminCheckout = internalMutation({
       return {
         bookingId: booking._id, confirmationCode: booking.confirmationCode,
         email: booking.email, amountCents: booking.paymentAmountCents!, currency: booking.paymentCurrency || 'usd',
-        paymentExpiresAt: booking.paymentExpiresAt, checkoutUrl: booking.stripeCheckoutUrl
+        paymentExpiresAt: booking.paymentExpiresAt, checkoutUrl: booking.stripeCheckoutUrl,
+        vehicleName: booking.vehicleSnapshot?.name
       }
     }
     const paymentExpiresAt = now + (24 * 60 - 5) * 60 * 1000
@@ -150,7 +155,7 @@ export const prepareAdminCheckout = internalMutation({
     return {
       bookingId: booking._id, confirmationCode: booking.confirmationCode,
       email: booking.email, amountCents: booking.paymentAmountCents!, currency: 'usd',
-      paymentExpiresAt, checkoutUrl: undefined
+      paymentExpiresAt, checkoutUrl: undefined, vehicleName: booking.vehicleSnapshot?.name
     }
   }
 })

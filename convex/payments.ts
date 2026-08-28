@@ -47,6 +47,7 @@ export const createCheckout = action({
     const returnOrigin = safeReturnOrigin(args.returnOrigin)
     const stripe = new Stripe(secretKey)
     const promotionDescription = booking.promotion?.name ? ` · ${booking.promotion.name}` : ''
+    const vehicleDescription = booking.vehicleName ? ` · ${booking.vehicleName}` : ''
     const checkoutMetadata: Record<string, string> = {
       bookingId: String(booking.bookingId),
       confirmationCode: booking.confirmationCode,
@@ -68,7 +69,7 @@ export const createCheckout = action({
             unit_amount: booking.amountCents,
             product_data: {
               name: 'Empire Elite Rides chauffeur reservation',
-              description: `Reservation ${booking.confirmationCode}${promotionDescription}`
+              description: `Reservation ${booking.confirmationCode}${vehicleDescription}${promotionDescription}`
             }
           }
         }],
@@ -133,7 +134,7 @@ export const createAdminCheckout = action({
           quantity: 1,
           price_data: {
             currency: booking.currency, unit_amount: booking.amountCents,
-            product_data: { name: 'Empire Elite Rides chauffeur reservation', description: `Reservation ${booking.confirmationCode}` }
+            product_data: { name: 'Empire Elite Rides chauffeur reservation', description: `Reservation ${booking.confirmationCode}${booking.vehicleName ? ` · ${booking.vehicleName}` : ''}` }
           }
         }],
         metadata: { bookingId: String(booking.bookingId), confirmationCode: booking.confirmationCode, source: 'admin' },

@@ -39,7 +39,11 @@ if (form) {
   const bookingStepCount = form.querySelector('[data-step-count]');
   const bookingStepName = form.querySelector('[data-step-name]');
   const estimateTransferNote = form.querySelector('[data-estimate-transfer-note]');
-  const bookingStepNames = ['Route', 'Schedule', 'Optional details', 'Contact', 'Review & pay'];
+  const bookingStepNames = ['Route', 'Vehicle', 'Schedule', 'Optional details', 'Contact', 'Review & pay'];
+  const vehicleCapacity = {
+    'ford-expedition-2017': { passengers: 7, luggage: 6 },
+    'lincoln-nautilus-hybrid-2025': { passengers: 4, luggage: 4 }
+  };
   const bookingMonthFormatter = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' });
   const bookingDateFormatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const bookingLongDateFormatter = new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
@@ -92,17 +96,18 @@ if (form) {
   }
   async function refreshBookingPickupAvailability() {
     const serviceDate = bookingCommittedStart;
+    const vehicleKey = form.elements.vehicleKey.value;
     const request = ++availabilityRequest;
-    if (!serviceDate) { bookingPickupTimePicker.setUnavailable([]); return; }
+    if (!serviceDate || !vehicleKey) { bookingPickupTimePicker.setUnavailable([]); return; }
     try {
       const client = await convexClient();
-      const availability = await client.query('bookings:availabilityForDate', { serviceDate });
-      if (request !== availabilityRequest || serviceDate !== bookingCommittedStart) return;
+      const availability = await client.query('bookings:availabilityForDate', { serviceDate, vehicleKey });
+      if (request !== availabilityRequest || serviceDate !== bookingCommittedStart || vehicleKey !== form.elements.vehicleKey.value) return;
       const selectionRemoved = bookingPickupTimePicker.setUnavailable(availability.unavailableTimes);
-      const scheduleMessage = bookingSteps[1].querySelector('[data-step-message]');
-      if (availability.dayFull) setStepMessage(bookingSteps[1], "We're fully booked for this date. Please choose another date.");
-      else if (selectionRemoved) setStepMessage(bookingSteps[1], 'Your previously selected pickup time is no longer available. Please choose another time.');
-      else if (/fully booked|no longer available/i.test(scheduleMessage?.textContent || '')) setStepMessage(bookingSteps[1]);
+      const scheduleMessage = bookingSteps[2].querySelector('[data-step-message]');
+      if (availability.dayFull) setStepMessage(bookingSteps[2], "That vehicle is fully booked for this date. Please choose another vehicle, date, or time.");
+      else if (selectionRemoved) setStepMessage(bookingSteps[2], 'Your previously selected pickup time is no longer available for that vehicle. Please choose another time.');
+      else if (/fully booked|no longer available/i.test(scheduleMessage?.textContent || '')) setStepMessage(bookingSteps[2]);
     } catch {
       if (request === availabilityRequest) bookingPickupTimePicker.setUnavailable([]);
     }
@@ -212,12 +217,12 @@ if (form) {
   function validateBookingStep(index) {
     const step = bookingSteps[index];
     setStepMessage(step);
-    if (index === 1 && (!bookingCommittedStart || (bookingDropoffEnabled && !bookingCommittedEnd))) {
+    if (index === 2 && (!bookingCommittedStart || (bookingDropoffEnabled && !bookingCommittedEnd))) {
       setStepMessage(step, bookingDropoffEnabled ? 'Choose and apply the return date before continuing.' : 'Choose and apply the pickup date before continuing.');
       openBookingCalendar(bookingDropoffEnabled && bookingCommittedStart ? 'end' : 'start', bookingDropoffEnabled && bookingCommittedStart ? bookingDropoffDateDisplay : bookingPickupDateDisplay);
       return false;
     }
-    if (index === 1 && (!bookingPickupTimePicker.getValue() || (bookingDropoffEnabled && !bookingReturnTimePicker.getValue()))) {
+    if (index === 2 && (!bookingPickupTimePicker.getValue() || (bookingDropoffEnabled && !bookingReturnTimePicker.getValue()))) {
       const missingPickupTime = !bookingPickupTimePicker.getValue();
       setStepMessage(step, missingPickupTime ? 'Choose a pickup time before continuing.' : 'Choose a return time before continuing.');
       (missingPickupTime ? bookingPickupTimePicker : bookingReturnTimePicker).focus();
@@ -243,7 +248,7 @@ if (form) {
         return false;
       }
     }
-    if (index === 1) {
+    if (index === 2) {
       if (form.elements.tripType.value === 'round_trip') {
         const returnPickupValue = returnPickup.getSelection();
         const returnDropoffValue = returnDropoff.getSelection();
@@ -254,7 +259,7 @@ if (form) {
         }
       }
     }
-    if (index === 3 && form.elements.phone.value.replace(/\D/g, '').length !== 10) {
+    if (index === 4 && form.elements.phone.value.replace(/\D/g, '').length !== 10) {
       setStepMessage(step, 'Enter a complete 10-digit phone number before continuing.');
       form.elements.phone.focus();
       return false;
@@ -297,6 +302,7 @@ if (form) {
     if (airportEnabled && (!form.elements.airline.value || !form.elements.flightNumber.value.trim())) throw new Error('Choose the airline and enter the flight number.');
     return {
       sessionId: customerSessionId(), estimateId: estimateId || undefined,
+      vehicleKey: form.elements.vehicleKey.value,
       pickup: pickupValue, dropoff: dropoffValue, pickupDate: form.elements.pickupDate.value, pickupTime: form.elements.pickupTime.value,
       tripType: form.elements.tripType.value, passengerCount: Number(form.elements.passengerCount.value), luggageCount: Number(form.elements.luggageCount.value),
       stops: selectedStops(), requestedWaitMinutes: Number(form.elements.requestedWaitMinutes.value), roundTripDetails,
@@ -313,6 +319,7 @@ if (form) {
     quoteResult.querySelector('[data-booking-total]').textContent = money(quote.finalPriceCents);
     const label = quoteResult.querySelector('[data-booking-quote-label]');
     label.textContent = quote.status === 'manual_review_required' ? 'Availability confirmation required' : 'Your confirmed quote';
+    quoteResult.querySelector('[data-booking-vehicle]').textContent = quote.vehicle ? `Reserved vehicle: ${quote.vehicle.name}` : '';
     const promotionLine = quoteResult.querySelector('[data-booking-promotion]');
     if (quote.promotion && quote.discountCents > 0) {
       promotionLine.textContent = `${quote.promotion.name}: you save ${money(quote.discountCents)}.`;
@@ -426,10 +433,9 @@ if (form) {
       bookingPickupTimePicker.setValue(estimate.pickupTime);
       const returnTime = searchParams.get('returnTime') || '';
       if (estimate.dropoffDate) bookingReturnTimePicker.setValue(returnTime);
-      const scheduleComplete = Boolean(estimate.pickupDate && estimate.pickupTime && (!estimate.dropoffDate || returnTime));
       estimateTransferNote.hidden = false;
-      showBookingStep(scheduleComplete ? 2 : 1, { focus: false, autoPrice: false });
-      quoteMessage.textContent = 'Trip details were transferred securely. Add any options and calculate your official price.';
+      showBookingStep(1, { focus: false, autoPrice: false });
+      quoteMessage.textContent = 'Trip details were transferred securely. Choose your vehicle to continue.';
     } catch {
       quoteMessage.textContent = 'The homepage estimate could not be loaded. Enter the trip details below.';
       showBookingStep(0, { focus: false, autoPrice: false });
@@ -453,8 +459,16 @@ if (form) {
       form.elements.flightNumber.value = '';
     }
   }
+  function syncVehicleCapacity() {
+    const limits = vehicleCapacity[form.elements.vehicleKey.value];
+    if (!limits) return;
+    form.elements.passengerCount.max = String(limits.passengers);
+    form.elements.luggageCount.max = String(limits.luggage);
+    form.elements.passengerCount.value = String(Math.min(Number(form.elements.passengerCount.value), limits.passengers));
+    form.elements.luggageCount.value = String(Math.min(Number(form.elements.luggageCount.value), limits.luggage));
+  }
 
-  setBookingDates(newYorkToday()); bookingPickupTimePicker.setValue(defaultTime()); syncAirportDetails();
+  setBookingDates(newYorkToday()); bookingPickupTimePicker.setValue(defaultTime()); syncAirportDetails(); syncVehicleCapacity();
   bookingAddDropoffDate.addEventListener('click', () => {
     form.elements.tripType.value = 'round_trip';
     setRoundTripMode(true, { syncDatePicker: false, notify: false });
@@ -486,6 +500,11 @@ if (form) {
     document.querySelector('#hourly-field').hidden = form.elements.tripType.value !== 'hourly';
   });
   form.elements.airportService.addEventListener('change', () => { syncAirportDetails(); invalidateQuote(); });
+  [...form.querySelectorAll('[name="vehicleKey"]')].forEach(control => control.addEventListener('change', () => {
+    syncVehicleCapacity();
+    void refreshBookingPickupAvailability();
+    invalidateQuote();
+  }));
   form.addEventListener('click', event => {
     if (event.target.closest('[data-step-back]')) {
       showBookingStep(currentBookingStep - 1);

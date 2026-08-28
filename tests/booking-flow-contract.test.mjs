@@ -15,10 +15,10 @@ const customerConfig = await readFile(new URL('../config.js', import.meta.url), 
 const adminEntry = await readFile(new URL('../admin-portal/src/main.jsx', import.meta.url), 'utf8')
 const adminDeployment = await readFile(new URL('../.github/workflows/deploy.yml', import.meta.url), 'utf8')
 
-test('booking presents exactly one of five centered steps at a time', () => {
-  assert.equal((html.match(/data-booking-step="\d"/g) || []).length, 5)
-  assert.equal((html.match(/data-booking-step="[1-4]"[^>]*hidden/g) || []).length, 4)
-  assert.match(html, /Step 1 of 5/)
+test('booking presents exactly one of six centered steps at a time', () => {
+  assert.equal((html.match(/data-booking-step="\d"/g) || []).length, 6)
+  assert.equal((html.match(/data-booking-step="[1-5]"[^>]*hidden/g) || []).length, 5)
+  assert.match(html, /Step 1 of 6/)
   assert.match(script, /bookingSteps\.forEach\(\(step, stepIndex\) => \{ step\.hidden = stepIndex !== currentBookingStep; \}\)/)
 })
 
@@ -43,11 +43,21 @@ test('optional ride details can be skipped and notes live on final review', () =
   assert.match(html, /class="final-notes"[\s\S]*name="notes"/)
 })
 
-test('homepage estimates skip already-completed route and schedule steps', () => {
+test('homepage estimates preserve route and schedule, then request a vehicle choice', () => {
   assert.match(script, /returnPickup\.setSelection\(estimate\.dropoff\)/)
   assert.match(script, /returnDropoff\.setSelection\(estimate\.pickup\)/)
-  assert.match(script, /showBookingStep\(scheduleComplete \? 2 : 1/)
+  assert.match(script, /showBookingStep\(1, \{ focus: false, autoPrice: false \}\)/)
   assert.match(html, /data-estimate-transfer-note/)
+})
+
+test('fleet choice is a required booking step and travels with the server-owned quote', () => {
+  assert.match(html, /name="vehicleKey" value="ford-expedition-2017" required/)
+  assert.match(html, /name="vehicleKey" value="lincoln-nautilus-hybrid-2025" required/)
+  assert.match(html, /2025 Lincoln Nautilus Hybrid/)
+  assert.match(script, /vehicleKey: form\.elements\.vehicleKey\.value/)
+  assert.match(quotes, /vehicleId: vehicle!\._id, vehicleSnapshot/)
+  assert.match(admin, /Vehicle \*<select value=\{form\.vehicleKey\}/)
+  assert.match(admin, /vehicleName\(row\)/)
 })
 
 test('direct booking keeps a centered location shortcut and aligned address fields', () => {

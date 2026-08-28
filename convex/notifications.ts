@@ -42,7 +42,8 @@ export const sendBooking = internalAction({
     endTime: v.string(),
     pickupAddress: v.string(),
     destination: v.string(),
-    notes: v.optional(v.string())
+    notes: v.optional(v.string()),
+    vehicleName: v.optional(v.string())
   },
   handler: async (_ctx, args) => {
     const sourceLabel = args.source === 'admin' ? 'Admin Portal' : 'Website'
@@ -54,6 +55,7 @@ export const sendBooking = internalAction({
       `Preferred contact: ${args.contactMethod}`,
       `Occasion: ${args.eventType}`,
       `Trip: ${args.tripType}`,
+      args.vehicleName ? `Vehicle: ${args.vehicleName}` : null,
       `When: ${args.serviceDate}, ${args.startTime}–${args.endTime}`,
       `Pickup: ${args.pickupAddress}`,
       `Destination: ${args.destination}`,

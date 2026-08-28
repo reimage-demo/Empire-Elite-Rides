@@ -17,6 +17,7 @@ import type * as lib_auth from "../lib/auth.js";
 import type * as lib_bookingState from "../lib/bookingState.js";
 import type * as lib_capacityCore from "../lib/capacityCore.js";
 import type * as lib_defaultPricing from "../lib/defaultPricing.js";
+import type * as lib_fleet from "../lib/fleet.js";
 import type * as lib_pricingConfig from "../lib/pricingConfig.js";
 import type * as lib_pricingCore from "../lib/pricingCore.js";
 import type * as lib_sessionToken from "../lib/sessionToken.js";
@@ -31,6 +32,7 @@ import type * as promotionsAdmin from "../promotionsAdmin.js";
 import type * as quotes from "../quotes.js";
 import type * as reservations from "../reservations.js";
 import type * as stripeWebhook from "../stripeWebhook.js";
+import type * as vehicles from "../vehicles.js";
 
 import type {
   ApiFromModules,
@@ -48,6 +50,7 @@ declare const fullApi: ApiFromModules<{
   "lib/bookingState": typeof lib_bookingState;
   "lib/capacityCore": typeof lib_capacityCore;
   "lib/defaultPricing": typeof lib_defaultPricing;
+  "lib/fleet": typeof lib_fleet;
   "lib/pricingConfig": typeof lib_pricingConfig;
   "lib/pricingCore": typeof lib_pricingCore;
   "lib/sessionToken": typeof lib_sessionToken;
@@ -62,6 +65,7 @@ declare const fullApi: ApiFromModules<{
   quotes: typeof quotes;
   reservations: typeof reservations;
   stripeWebhook: typeof stripeWebhook;
+  vehicles: typeof vehicles;
 }>;
 
 /**

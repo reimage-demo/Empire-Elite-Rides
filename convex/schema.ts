@@ -40,6 +40,7 @@ export default defineSchema({
     estimateId: v.optional(v.id('rideEstimates')),
     promotionId: v.optional(v.id('promotions')),
     vehicleId: v.optional(v.id('vehicles')),
+    vehicleSnapshot: v.optional(v.any()),
     routeSnapshot: v.optional(v.any()), pricingSnapshot: v.optional(v.any()), promotionSnapshot: v.optional(v.any()),
     createdAt: v.number(), updatedAt: v.number()
   }).index('by_start', ['startAt'])
@@ -62,9 +63,12 @@ export default defineSchema({
   }).index('by_username', ['username']).index('by_active', ['active']),
 
   vehicles: defineTable({
-    name: v.string(), make: v.string(), model: v.string(), year: v.number(),
+    key: v.optional(v.string()), name: v.string(), make: v.string(), model: v.string(), year: v.number(),
+    vehicleClass: v.optional(v.string()), powertrain: v.optional(v.string()), color: v.optional(v.string()),
+    passengerCapacity: v.optional(v.number()), luggageCapacity: v.optional(v.number()),
+    description: v.optional(v.string()), imageUrl: v.optional(v.string()), sortOrder: v.optional(v.number()),
     active: v.boolean(), createdAt: v.number(), updatedAt: v.number()
-  }).index('by_active', ['active']),
+  }).index('by_active', ['active']).index('by_key', ['key']),
 
   operatingBases: defineTable({
     name: v.string(), address: v.string(), formattedAddress: v.string(),
@@ -126,6 +130,7 @@ export default defineSchema({
     tollEstimateCents: v.number(), finalPriceCents: v.number(), pricingConfigVersion: v.number(),
     pricingSnapshot: v.any(), quoteHash: v.string(),
     promotionId: v.optional(v.id('promotions')), promotionSnapshot: v.optional(v.any()),
+    vehicleId: v.optional(v.id('vehicles')), vehicleSnapshot: v.optional(v.any()),
     status: v.union(v.literal('instant_quote'), v.literal('manual_review_required'), v.literal('approved'), v.literal('rejected'), v.literal('expired'), v.literal('converted')),
     createdAt: v.number(), expiresAt: v.number()
   }).index('by_session', ['customerSessionId']).index('by_expiration', ['expiresAt']).index('by_status', ['status']),

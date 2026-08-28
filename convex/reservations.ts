@@ -28,13 +28,13 @@ export const submit = mutation({
     const quote = rawQuote!
     if (quote.customerSessionId !== args.sessionId || quote.expiresAt <= now || !['instant_quote', 'manual_review_required', 'approved'].includes(quote.status)) fail('QUOTE_EXPIRED', 'Recalculate this request before submitting it.')
 
-    const activeBookings = (await ctx.db.query('bookings').collect()).filter(row => bookingBlocksAvailability(row, now))
+    const activeBookings = (await ctx.db.query('bookings').collect()).filter(row => bookingBlocksAvailability(row, now) && (!quote.vehicleId || !row.vehicleId || row.vehicleId === quote.vehicleId))
     const pickupDate = localParts(quote.scheduledPickupAt).date
     const sameDayBookings = activeBookings.filter(row => row.serviceDate === pickupDate)
     const capacityReason = capacityIssue(sameDayBookings.map(row => localPickupToUtc(row.serviceDate, row.startTime)), quote.scheduledPickupAt)
     if (capacityReason === 'day_full') fail('DAY_FULL', "We're fully booked for this date. Please choose another date.")
     if (capacityReason === 'pickup_spacing') fail('TIME_UNAVAILABLE', 'That pickup window is fully booked. Please choose a different time.')
-    const activeBlocks = await ctx.db.query('blackoutPeriods').withIndex('by_active', q => q.eq('active', true)).collect()
+    const activeBlocks = (await ctx.db.query('blackoutPeriods').withIndex('by_active', q => q.eq('active', true)).collect()).filter(row => !row.vehicleId || !quote.vehicleId || row.vehicleId === quote.vehicleId)
     const conflict = [
       ...activeBookings.map(row => ({ startAt: localPickupToUtc(row.serviceDate, row.startTime), endAt: localPickupToUtc(row.serviceDate, row.endTime) })),
       ...activeBlocks.map(row => ({ startAt: row.startAt, endAt: row.endAt }))
@@ -52,6 +52,7 @@ export const submit = mutation({
       startAt: quote.scheduledPickupAt, endAt: quote.expectedEndAt, pickupAddress: quote.requestInputs.pickup.address, destination: quote.requestInputs.dropoff.address,
       notes: bookingNotes, source: 'website', status: needsReview ? 'manual_review' : 'requested', quoteId: quote._id, estimateId: quote.estimateId,
       customerSessionId: args.sessionId, paymentStatus: 'not_required',
+      vehicleId: quote.vehicleId, vehicleSnapshot: quote.vehicleSnapshot,
       routeSnapshot: quote.routeSnapshot, pricingSnapshot: { version: quote.pricingConfigVersion, quotedPriceCents: quote.finalPriceCents, customerBreakdown: quote.pricingBreakdown.customer },
       createdAt: now, updatedAt: now
     })
@@ -60,7 +61,8 @@ export const submit = mutation({
       bookingId: String(bookingId), confirmationCode: code, source: 'website', fullName: args.customer.fullName.trim(),
       phone: args.customer.phone.trim(), email: args.customer.email.trim().toLowerCase(), contactMethod: args.customer.contactMethod,
       eventType: args.customer.eventType, tripType: quote.tripType, serviceDate: start.date, startTime: start.time, endTime: end.time,
-      pickupAddress: quote.requestInputs.pickup.address, destination: quote.requestInputs.dropoff.address, notes: bookingNotes || undefined
+      pickupAddress: quote.requestInputs.pickup.address, destination: quote.requestInputs.dropoff.address, notes: bookingNotes || undefined,
+      vehicleName: quote.vehicleSnapshot?.name
     })
     return { confirmationCode: code, status: needsReview ? 'manual_review' : 'requested' }
   }

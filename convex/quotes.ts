@@ -7,6 +7,7 @@ import { calculateRidePrice } from './lib/pricingCore.mjs'
 import { mergePricingSnapshot } from './lib/pricingConfig.mjs'
 import { bookingBlocksAvailability } from './lib/bookingState'
 import { capacityIssue } from './lib/capacityCore.mjs'
+import { FLEET, publicVehicle, syncFleet } from './lib/fleet'
 
 const internalApi: any = internal
 
@@ -216,7 +217,9 @@ export const getFoundation = internalQuery({
     const events = await ctx.db.query('specialEventRules').withIndex('by_active', q => q.eq('active', true)).collect()
     return {
       config: config ? { ...config, snapshot: mergePricingSnapshot(DEFAULT_PRICING, config.snapshot) } : null,
-      vehicle: vehicles[0] || null, base: bases[0] || null, holidays, events
+      vehicles: vehicles.sort((a, b) => Number(a.sortOrder || 99) - Number(b.sortOrder || 99)),
+      vehicle: vehicles.find(row => row.key === FLEET[0].key) || vehicles[0] || null,
+      base: bases[0] || null, holidays, events
     }
   }
 })
@@ -227,8 +230,7 @@ export const ensureFoundation = internalMutation({
     const now = Date.now()
     const config = await ctx.db.query('pricingConfigs').withIndex('by_active', q => q.eq('active', true)).first()
     if (!config) await ctx.db.insert('pricingConfigs', { version: 1, effectiveAt: now, createdBy: 'system-bootstrap', createdAt: now, snapshot: DEFAULT_PRICING, active: true })
-    const vehicle = await ctx.db.query('vehicles').withIndex('by_active', q => q.eq('active', true)).first()
-    if (!vehicle) await ctx.db.insert('vehicles', { name: '2017 Ford Expedition Limited', make: 'Ford', model: 'Expedition Limited', year: 2017, active: true, createdAt: now, updatedAt: now })
+    await syncFleet(ctx)
     const existingBase = await ctx.db.query('operatingBases').withIndex('by_active', q => q.eq('active', true)).first()
     if (!existingBase) await ctx.db.insert('operatingBases', {
       name: 'Watervliet operating base', address: OPERATING_BASE_ADDRESS, formattedAddress: base.formattedAddress,
@@ -240,7 +242,7 @@ export const ensureFoundation = internalMutation({
 
 async function foundation(ctx: any, token: string) {
   let state: any = await ctx.runQuery(internalApi.quotes.getFoundation, {})
-  if (!state.config || !state.vehicle || !state.base) {
+  if (!state.config || !state.vehicle || !state.base || state.vehicles.length < FLEET.length) {
     const [base] = await forwardGeocode(OPERATING_BASE_ADDRESS, token)
     if (!base) publicError('BASE_ADDRESS_ERROR', 'The operating base could not be resolved. Please contact support.')
     await ctx.runMutation(internalApi.quotes.ensureFoundation, { base })
@@ -253,7 +255,7 @@ export const checkAvailability = internalQuery({
   args: { vehicleId: v.id('vehicles'), scheduledAt: v.number(), expectedEndAt: v.number(), config: v.any() },
   handler: async (ctx, args) => {
     const now = Date.now()
-    const bookings = (await ctx.db.query('bookings').collect()).filter(row => bookingBlocksAvailability(row, now))
+    const bookings = (await ctx.db.query('bookings').collect()).filter(row => bookingBlocksAvailability(row, now) && (!row.vehicleId || row.vehicleId === args.vehicleId))
     const pickupLocal = localParts(args.scheduledAt)
     const sameDayBookings = bookings.filter(row => row.serviceDate === pickupLocal.date)
     const capacityReason = capacityIssue(sameDayBookings.map(row => localPickupToUtc(row.serviceDate, row.startTime)), args.scheduledAt)
@@ -314,7 +316,12 @@ export const generateHomepageQuote = action({
     const legs = await Promise.all([routeLeg(base, pickup, token, config, scheduledPickupAt), routeLeg(pickup, dropoff, token, config, scheduledPickupAt), routeLeg(dropoff, base, token, config, scheduledPickupAt)])
     const route = aggregateRoute(legs)
     const occupiedMs = routeDurationMs(route, 0, 0, config.stopDurationAllowanceMinutes) + (config.cleaningBufferMinutes + config.preparationBufferMinutes + config.driverBreakBufferMinutes) * 60000
-    const availability = await ctx.runQuery(internalApi.quotes.checkAvailability, { vehicleId: state.vehicle._id, scheduledAt: scheduledPickupAt, expectedEndAt: scheduledPickupAt + occupiedMs, config })
+    const fleetAvailability = await Promise.all(state.vehicles.map(async (vehicle: any) => ({
+      vehicle,
+      availability: await ctx.runQuery(internalApi.quotes.checkAvailability, { vehicleId: vehicle._id, scheduledAt: scheduledPickupAt, expectedEndAt: scheduledPickupAt + occupiedMs, config })
+    })))
+    const availableVehicle = fleetAvailability.find((option: any) => option.availability.status !== 'unavailable') || fleetAvailability[0]
+    const vehicle = availableVehicle.vehicle, availability = availableVehicle.availability
     const demand = demandSnapshot(availability, config), local = localParts(scheduledPickupAt)
     const automaticPromotion = await ctx.runQuery(internalApi.promotions.activeAutomatic, { now, serviceType: 'one_way' })
     const totalRouteMiles = (route.positioningDistanceMeters + route.passengerDistanceMeters + route.returnDistanceMeters) / 1609.344
@@ -328,7 +335,7 @@ export const generateHomepageQuote = action({
       sessionId: args.sessionId, pickupPlaceId: pickup.placeId, pickupAddress: pickup.formattedAddress, pickupCoordinates: { latitude: pickup.latitude, longitude: pickup.longitude },
       dropoffPlaceId: dropoff.placeId, dropoffAddress: dropoff.formattedAddress, dropoffCoordinates: { latitude: dropoff.latitude, longitude: dropoff.longitude },
       pickupDate: args.pickupDate, ...(dropoffDate ? { dropoffDate } : {}), pickupTime: args.pickupTime, scheduledPickupAt, timezone: DEFAULT_TIMEZONE,
-      operatingBaseId: state.base._id, vehicleId: state.vehicle._id, routeSnapshot: route,
+      operatingBaseId: state.base._id, vehicleId: vehicle._id, routeSnapshot: route,
       trafficSnapshot: { method: 'provider-duration-with-configured-time-window-fallback', normalSeconds: route.passengerNormalDurationSeconds, adjustedSeconds: route.passengerTrafficDurationSeconds },
       availabilitySnapshot: availability, demandSnapshot: demand,
       pricingBreakdown: { customer: pricing.customerBreakdown, internal: pricing.internalBreakdown },
@@ -357,14 +364,13 @@ export const generateBookingQuote = action({
   args: {
     sessionId: v.string(), estimateId: v.optional(v.id('rideEstimates')),
     pickup: publicPlace, dropoff: publicPlace, pickupDate: v.string(), pickupTime: v.string(),
-    tripType: v.string(), passengerCount: v.number(), luggageCount: v.number(), stops: v.array(publicPlace),
+    vehicleKey: v.string(), tripType: v.string(), passengerCount: v.number(), luggageCount: v.number(), stops: v.array(publicPlace),
     requestedWaitMinutes: v.number(), roundTripDetails: v.optional(v.any()), airportOptions: v.optional(v.any()),
     hourlyDetails: v.optional(v.any()), eventOptions: v.optional(v.any()), promotionCode: v.optional(v.string())
   },
   handler: async (ctx, args) => {
     requireSession(args.sessionId)
     await ctx.runMutation(internalApi.quotes.consumeRateLimit, { key: `bookingquote:${args.sessionId}`, limit: 20, windowMs: 60000 })
-    if (args.passengerCount < 1 || args.passengerCount > 7 || args.luggageCount < 0 || args.luggageCount > 12 || args.stops.length > 6) publicError('INVALID_BOOKING_OPTIONS', 'Review the passenger, luggage, and stop details.')
     let airportOptions: { enabled: true, direction: string, airline: string, flightNumber: string } | undefined
     if (args.airportOptions?.enabled) {
       const direction = String(args.airportOptions.direction || '')
@@ -378,6 +384,11 @@ export const generateBookingQuote = action({
     const token = mapsToken(), now = Date.now(), scheduledPickupAt = localPickupToUtc(args.pickupDate, args.pickupTime)
     if (scheduledPickupAt <= now) publicError('PAST_PICKUP', 'Choose a pickup time in the future.')
     const state = await foundation(ctx, token), config = state.config.snapshot
+    const vehicle = state.vehicles.find((row: any) => row.key === args.vehicleKey && row.active)
+    if (!vehicle) publicError('VEHICLE_UNAVAILABLE', 'Choose an available vehicle before continuing.')
+    if (args.passengerCount < 1 || args.passengerCount > Number(vehicle!.passengerCapacity || 1) || args.luggageCount < 0 || args.luggageCount > Number(vehicle!.luggageCapacity || 0) || args.stops.length > 6) {
+      publicError('INVALID_BOOKING_OPTIONS', `The selected ${vehicle!.name} cannot accommodate that passenger or luggage count.`)
+    }
     const resolved = await Promise.all([resolveAddress(ctx, args.sessionId, args.pickup), ...args.stops.map(stop => resolveAddress(ctx, args.sessionId, stop)), resolveAddress(ctx, args.sessionId, args.dropoff)])
     let passengerPoints = resolved
     let roundTripReturnAt: number | null = null
@@ -395,7 +406,7 @@ export const generateBookingQuote = action({
     const occupiedMs = routeDurationMs(route, args.requestedWaitMinutes, args.stops.length, config.stopDurationAllowanceMinutes) + (config.cleaningBufferMinutes + config.preparationBufferMinutes + config.driverBreakBufferMinutes) * 60000
     const postReturnMs = roundTripReturnAt ? (legs.slice(-2).reduce((total, leg) => total + leg.trafficDurationSeconds, 0) * 1000) + (config.cleaningBufferMinutes + config.preparationBufferMinutes + config.driverBreakBufferMinutes) * 60000 : 0
     const expectedEndAt = Math.max(scheduledPickupAt + occupiedMs, roundTripReturnAt ? roundTripReturnAt + postReturnMs : 0)
-    const availability = await ctx.runQuery(internalApi.quotes.checkAvailability, { vehicleId: state.vehicle._id, scheduledAt: scheduledPickupAt, expectedEndAt, config })
+    const availability = await ctx.runQuery(internalApi.quotes.checkAvailability, { vehicleId: vehicle!._id, scheduledAt: scheduledPickupAt, expectedEndAt, config })
     const demand = demandSnapshot(availability, config), local = localParts(scheduledPickupAt)
     const promotions: any[] = []
     const automaticPromotion = await ctx.runQuery(internalApi.promotions.activeAutomatic, { now, serviceType: args.tripType })
@@ -411,7 +422,8 @@ export const generateBookingQuote = action({
     const pricing = calculateRidePrice(pricingInput, config)
     const status = availability.status === 'unavailable' ? 'rejected' : pricing.manualReview ? 'manual_review_required' : 'instant_quote'
     const createdAt = Date.now(), expiresAt = createdAt + config.bookingQuoteExpirationMinutes * 60000
-    const requestInputs = { ...args, airportOptions, pickup: { placeId: resolved[0].placeId, address: resolved[0].formattedAddress }, dropoff: { placeId: resolved[resolved.length - 1].placeId, address: resolved[resolved.length - 1].formattedAddress } }
+    const vehicleSnapshot = publicVehicle(vehicle)
+    const requestInputs = { ...args, airportOptions, vehicle: vehicleSnapshot, pickup: { placeId: resolved[0].placeId, address: resolved[0].formattedAddress }, dropoff: { placeId: resolved[resolved.length - 1].placeId, address: resolved[resolved.length - 1].formattedAddress } }
     const integrity = { customerSessionId: args.sessionId, requestInputs, route, pricingVersion: state.config.version, finalPriceCents: pricing.finalPriceCents, expiresAt }
     const quoteHash = await sha256(integrity)
     const record = {
@@ -420,12 +432,12 @@ export const generateBookingQuote = action({
       availabilitySnapshot: availability, demandSnapshot: demand, pricingBreakdown: { customer: pricing.customerBreakdown, internal: pricing.internalBreakdown },
       subtotalCents: pricing.subtotalCents, discountCents: pricing.discountCents, taxCents: pricing.taxCents, gratuityCents: pricing.gratuityCents,
       tollEstimateCents: pricing.tollEstimateCents, finalPriceCents: pricing.finalPriceCents, pricingConfigVersion: state.config.version,
-      pricingSnapshot: config, quoteHash, status, createdAt, expiresAt,
+      pricingSnapshot: config, quoteHash, status, createdAt, expiresAt, vehicleId: vehicle!._id, vehicleSnapshot,
       promotionId: pricing.appliedPromotion?.promotionId,
       promotionSnapshot: pricing.appliedPromotion ? { kind: pricing.appliedPromotion.kind, name: pricing.appliedPromotion.name, code: pricing.appliedPromotion.code, percentageBps: pricing.appliedPromotion.percentageBps, discountCents: pricing.discountCents } : undefined
     }
     const quoteId = await ctx.runMutation(internalApi.quotes.saveQuote, { record, estimateId: args.estimateId })
-    return { quoteId, status, availabilityReason: availability.reason || null, expiresAt, finalPriceCents: pricing.finalPriceCents, discountCents: pricing.discountCents, passengerMiles: pricing.passengerMiles, passengerMinutes: pricing.passengerMinutes, customerBreakdown: pricing.customerBreakdown, availability: availability.status, promotion: pricing.appliedPromotion ? { ...(pricing.appliedPromotion.promotionId ? { id: pricing.appliedPromotion.promotionId } : {}), kind: pricing.appliedPromotion.kind, name: pricing.appliedPromotion.name, code: pricing.appliedPromotion.kind === 'code' ? pricing.appliedPromotion.code : undefined, percentageBps: pricing.appliedPromotion.percentageBps, discountCents: pricing.discountCents } : null }
+    return { quoteId, status, availabilityReason: availability.reason || null, expiresAt, finalPriceCents: pricing.finalPriceCents, discountCents: pricing.discountCents, passengerMiles: pricing.passengerMiles, passengerMinutes: pricing.passengerMinutes, customerBreakdown: pricing.customerBreakdown, availability: availability.status, vehicle: vehicleSnapshot, promotion: pricing.appliedPromotion ? { ...(pricing.appliedPromotion.promotionId ? { id: pricing.appliedPromotion.promotionId } : {}), kind: pricing.appliedPromotion.kind, name: pricing.appliedPromotion.name, code: pricing.appliedPromotion.kind === 'code' ? pricing.appliedPromotion.code : undefined, percentageBps: pricing.appliedPromotion.percentageBps, discountCents: pricing.discountCents } : null }
   }
 })
 

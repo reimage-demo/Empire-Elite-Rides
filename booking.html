@@ -44,9 +44,9 @@
       <form id="booking-form">
         <input name="eventType" type="hidden" value="Private ride">
         <header class="booking-flow-header">
-          <div><span data-step-count>Step 1 of 5</span><strong data-step-name>Route</strong></div>
-          <div class="booking-progress" role="progressbar" aria-label="Booking progress" aria-valuemin="1" aria-valuemax="5" aria-valuenow="1">
-            <span class="active"></span><span></span><span></span><span></span><span></span>
+          <div><span data-step-count>Step 1 of 6</span><strong data-step-name>Route</strong></div>
+          <div class="booking-progress" role="progressbar" aria-label="Booking progress" aria-valuemin="1" aria-valuemax="6" aria-valuenow="1">
+            <span class="active"></span><span></span><span></span><span></span><span></span><span></span>
           </div>
         </header>
 
@@ -74,7 +74,24 @@
           <div class="booking-step-actions"><button class="gold-button" type="button" data-step-next>Continue <span>→</span></button></div>
         </section>
 
-        <section class="booking-step" data-booking-step="1" aria-labelledby="booking-step-schedule" hidden>
+        <section class="booking-step vehicle-booking-step" data-booking-step="1" aria-labelledby="booking-step-vehicle" hidden>
+          <div class="booking-step-heading"><p class="eyebrow">Choose your ride</p><h2 id="booking-step-vehicle" tabindex="-1">Which vehicle fits your trip?</h2><p>Your selection reserves that vehicle and checks its schedule independently.</p></div>
+          <p class="estimate-transfer-note" data-estimate-transfer-note role="status" hidden><strong>Your route and schedule are already filled in.</strong> Choose your vehicle to continue.</p>
+          <fieldset><legend>Available fleet</legend><div class="vehicle-choice-grid">
+            <label class="vehicle-choice">
+              <input type="radio" name="vehicleKey" value="ford-expedition-2017" required>
+              <span class="vehicle-choice-card"><span class="vehicle-choice-image"><img src="assets/images/vehicle/expedition-city-hero.png" alt="Black 2017 Ford Expedition Limited"></span><span class="vehicle-choice-copy"><small>Full-size luxury SUV</small><strong>2017 Ford Expedition Limited</strong><span>Up to 7 passengers · generous luggage room</span><em>Best for larger groups, family travel, and luggage-heavy airport trips.</em></span><span class="vehicle-choice-check" aria-hidden="true">✓</span></span>
+            </label>
+            <label class="vehicle-choice">
+              <input type="radio" name="vehicleKey" value="lincoln-nautilus-hybrid-2025" required>
+              <span class="vehicle-choice-card"><span class="vehicle-choice-image"><img src="assets/images/vehicle/lincoln-nautilus-whisper-blue.png" alt="Whisper Blue Metallic 2025 Lincoln Nautilus Hybrid"></span><span class="vehicle-choice-copy"><small>Midsize luxury hybrid SUV</small><strong>2025 Lincoln Nautilus Hybrid</strong><span>Up to 4 passengers · up to 4 luggage pieces</span><em>Quiet hybrid comfort in Whisper Blue Metallic for executives, couples, and smaller groups.</em></span><span class="vehicle-choice-check" aria-hidden="true">✓</span></span>
+            </label>
+          </div></fieldset>
+          <p class="step-message" data-step-message role="status" aria-live="polite"></p>
+          <div class="booking-step-actions"><button class="step-back" type="button" data-step-back>← Back</button><button class="gold-button" type="button" data-step-next>Continue <span>→</span></button></div>
+        </section>
+
+        <section class="booking-step" data-booking-step="2" aria-labelledby="booking-step-schedule" hidden>
           <div class="booking-step-heading"><p class="eyebrow">Your schedule</p><h2 id="booking-step-schedule" tabindex="-1">When should we arrive?</h2><p>Select your pickup date and time. Add a return only if you need one.</p></div>
           <fieldset><legend>Date and time</legend><p class="price-impact-notice"><strong>Price promise:</strong> Your selected date and time will not add a pricing adjustment.</p><div class="form-grid two">
             <div class="date-range-control booking-date-range" data-booking-date-range>
@@ -104,9 +121,8 @@
           <div class="booking-step-actions"><button class="step-back" type="button" data-step-back>← Back</button><button class="gold-button" type="button" data-step-next>Continue <span>→</span></button></div>
         </section>
 
-        <section class="booking-step" data-booking-step="2" aria-labelledby="booking-step-ride" hidden>
+        <section class="booking-step" data-booking-step="3" aria-labelledby="booking-step-ride" hidden>
           <div class="booking-step-heading"><p class="eyebrow">Optional details</p><h2 id="booking-step-ride" tabindex="-1">Anything else for the ride?</h2><p>Passenger, luggage, airport, and waiting details are optional. Skip this screen if you do not need them.</p></div>
-          <p class="estimate-transfer-note" data-estimate-transfer-note role="status" hidden><strong>Your route and schedule are already filled in.</strong> Continue here, or use Back if you want to edit them.</p>
           <fieldset><legend>Passengers and luggage</legend><div class="form-grid two">
             <label>Passengers *<input name="passengerCount" type="number" min="1" max="7" value="1" required></label>
             <label>Luggage pieces *<input name="luggageCount" type="number" min="0" max="12" value="0" required></label>
@@ -130,7 +146,7 @@
           <div class="booking-step-actions"><button class="step-back" type="button" data-step-back>← Back</button><button class="step-skip" type="button" data-step-skip>Skip optional details</button><button class="gold-button" type="button" data-step-next>Continue <span>→</span></button></div>
         </section>
 
-        <section class="booking-step" data-booking-step="3" aria-labelledby="booking-step-contact" hidden>
+        <section class="booking-step" data-booking-step="4" aria-labelledby="booking-step-contact" hidden>
           <div class="booking-step-heading"><p class="eyebrow">Your contact details</p><h2 id="booking-step-contact" tabindex="-1">How can we reach you?</h2><p>We use this information only to manage your ride.</p></div>
           <fieldset><legend>Customer information</legend><div class="form-grid two">
             <label>Full name *<input name="fullName" autocomplete="name" required maxlength="100" placeholder="Your full name"></label>
@@ -142,11 +158,11 @@
           <div class="booking-step-actions"><button class="step-back" type="button" data-step-back>← Back</button><button class="gold-button" type="button" data-step-next>Review My Ride <span>→</span></button></div>
         </section>
 
-        <section class="booking-step booking-review-step" data-booking-step="4" aria-labelledby="booking-step-review" hidden>
+        <section class="booking-step booking-review-step" data-booking-step="5" aria-labelledby="booking-step-review" hidden>
           <div class="booking-step-heading"><p class="eyebrow">Review and pay</p><h2 id="booking-step-review" tabindex="-1">Your ride is almost ready.</h2><p>We’ll calculate your official price from the details you provided.</p></div>
           <section class="booking-quote" aria-labelledby="booking-price-title"><p class="eyebrow">Official price</p><h2 id="booking-price-title">Your ride price</h2>
             <div id="booking-quote-placeholder"><p>Preparing your official price…</p></div>
-            <div id="booking-quote-result" hidden><strong data-booking-total></strong><p data-booking-quote-label></p><p class="applied-promotion" data-booking-promotion hidden></p><dl data-booking-breakdown></dl><p class="quote-expiration" data-quote-expiration></p></div>
+            <div id="booking-quote-result" hidden><strong data-booking-total></strong><p data-booking-quote-label></p><p class="booking-vehicle-summary" data-booking-vehicle></p><p class="applied-promotion" data-booking-promotion hidden></p><dl data-booking-breakdown></dl><p class="quote-expiration" data-quote-expiration></p></div>
             <p id="quote-message" class="quote-status" role="status" aria-live="polite"></p>
             <button id="calculate-booking-price" class="gold-button" type="button">Recalculate Price <span>↻</span></button>
           </section>

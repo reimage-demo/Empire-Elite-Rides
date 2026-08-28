@@ -36,6 +36,15 @@ test('capacity is enforced for quotes, website reservations, and admin bookings'
   assert.match(admin, /MINIMUM_PICKUP_SPACING_MINUTES = 120/)
 })
 
+test('availability and schedule conflicts are scoped to the selected vehicle', () => {
+  assert.match(quotes, /row\.vehicleId === args\.vehicleId/)
+  assert.match(quotes, /fleetAvailability\.find/)
+  assert.match(reservations, /row\.vehicleId === quote\.vehicleId/)
+  assert.match(bookings, /row\.vehicleId === vehicle\._id/)
+  assert.match(booking, /\{ serviceDate, vehicleKey \}/)
+  assert.match(admin, /vehicleKey\(row\) === form\.vehicleKey/)
+})
+
 test('customer and admin pickup selectors retain 15-minute intervals and remove blocked options', () => {
   assert.match(pricingClient, /for \(const minute of \[0, 15, 30, 45\]\)/)
   assert.match(pricingClient, /if \(unavailable\.has\(optionValue\)\) continue/)

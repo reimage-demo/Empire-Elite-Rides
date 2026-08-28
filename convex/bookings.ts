@@ -5,6 +5,7 @@ import { requireActiveSession } from './lib/sessionToken'
 import { bookingBlocksAvailability } from './lib/bookingState'
 import { localPickupToUtc } from './lib/time'
 import { capacityIssue, MAX_DAILY_RESERVATIONS } from './lib/capacityCore.mjs'
+import { FLEET, fleetVehicle, publicVehicle, requireFleetVehicle } from './lib/fleet'
 
 const status = v.union(v.literal('payment_pending'), v.literal('requested'), v.literal('manual_review'), v.literal('confirmed'), v.literal('completed'), v.literal('cancelled'), v.literal('refunded'))
 
@@ -57,7 +58,9 @@ async function insertBooking(ctx: any, args: any, source: 'website' | 'admin') {
     bookingError('INVALID_PAYMENT_AMOUNT', 'Enter a payment amount between $0.50 and $100,000.00.')
   }
 
-  const activeForDate = (await ctx.db.query('bookings').withIndex('by_date', (q: any) => q.eq('serviceDate', args.serviceDate)).collect()).filter((row: any) => bookingBlocksAvailability(row))
+  const vehicle = await requireFleetVehicle(ctx, args.vehicleKey || FLEET[0].key)
+  if (!vehicle) bookingError('VEHICLE_UNAVAILABLE', 'Choose an available vehicle.')
+  const activeForDate = (await ctx.db.query('bookings').withIndex('by_date', (q: any) => q.eq('serviceDate', args.serviceDate)).collect()).filter((row: any) => bookingBlocksAvailability(row) && (!row.vehicleId || row.vehicleId === vehicle._id))
   const scheduledPickupAt = localPickupToUtc(args.serviceDate, args.startTime)
   const capacityReason = capacityIssue(activeForDate.map((row: any) => localPickupToUtc(row.serviceDate, row.startTime)), scheduledPickupAt)
   if (capacityReason === 'day_full') bookingError('DAY_FULL', 'Daily capacity has been reached for this date. Choose another date.')
@@ -69,8 +72,11 @@ async function insertBooking(ctx: any, args: any, source: 'website' | 'admin') {
   const now = Date.now()
   const confirmationCode = `EER-${now.toString(36).slice(-6).toUpperCase()}${Math.floor(Math.random() * 90 + 10)}`
   const normalizedEmail = args.email?.trim().toLowerCase() || undefined
+  const { vehicleKey: _vehicleKey, ...bookingArgs } = args
   const id = await ctx.db.insert('bookings', {
-    ...args,
+    ...bookingArgs,
+    vehicleId: vehicle._id,
+    vehicleSnapshot: publicVehicle(vehicle),
     email: normalizedEmail,
     fullName: args.fullName.trim(),
     phone: args.phone.trim(),
@@ -104,7 +110,8 @@ async function insertBooking(ctx: any, args: any, source: 'website' | 'admin') {
     endTime: args.endTime,
     pickupAddress: args.pickupAddress.trim(),
     destination: args.destination.trim(),
-    notes: args.notes.trim() || undefined
+    notes: args.notes.trim() || undefined,
+    vehicleName: vehicle.name
   })
   return { id, confirmationCode }
 }
@@ -117,7 +124,7 @@ export const create = mutation({
     eventType: v.string(),
     tripType: v.union(v.literal('pickup'), v.literal('dropoff'), v.literal('both')),
     serviceDate: v.string(), startTime: v.string(), endTime: v.string(),
-    pickupAddress: v.string(), destination: v.string(), notes: v.string()
+    pickupAddress: v.string(), destination: v.string(), notes: v.string(), vehicleKey: v.optional(v.string())
   },
   handler: async (ctx, args) => insertBooking(ctx, args, 'website')
 })
@@ -130,7 +137,7 @@ export const createAdmin = mutation({
     eventType: v.string(),
     tripType: v.union(v.literal('pickup'), v.literal('dropoff'), v.literal('both')),
     serviceDate: v.string(), startTime: v.string(), endTime: v.string(),
-    pickupAddress: v.string(), destination: v.string(), notes: v.string(),
+    pickupAddress: v.string(), destination: v.string(), notes: v.string(), vehicleKey: v.string(),
     paymentAmountCents: v.number()
   },
   handler: async (ctx, { sessionToken, ...args }) => {
@@ -140,10 +147,12 @@ export const createAdmin = mutation({
 })
 
 export const availabilityForDate = query({
-  args: { serviceDate: v.string() },
-  handler: async (ctx, { serviceDate }) => {
+  args: { serviceDate: v.string(), vehicleKey: v.optional(v.string()) },
+  handler: async (ctx, { serviceDate, vehicleKey }) => {
     const rows = await ctx.db.query('bookings').withIndex('by_date', q => q.eq('serviceDate', serviceDate)).collect()
-    const active = rows.filter(row => bookingBlocksAvailability(row))
+    const requested = fleetVehicle(vehicleKey || FLEET[0].key)
+    const vehicle = requested ? await ctx.db.query('vehicles').withIndex('by_key', query => query.eq('key', requested.key)).unique() : null
+    const active = rows.filter(row => bookingBlocksAvailability(row) && (vehicle ? (!row.vehicleId || row.vehicleId === vehicle._id) : requested?.key === FLEET[0].key ? !row.vehicleId : false))
     const existingPickupTimes = active.map(row => localPickupToUtc(row.serviceDate, row.startTime))
     const unavailableTimes: string[] = []
     for (let minute = 0; minute < 24 * 60; minute += 15) {
@@ -162,7 +171,9 @@ export const adminList = query({
   args: { sessionToken: v.string() },
   handler: async (ctx, { sessionToken }) => {
     await requireAdmin(ctx, sessionToken)
-    return ctx.db.query('bookings').withIndex('by_start').order('desc').collect()
+    const rows = await ctx.db.query('bookings').withIndex('by_start').order('desc').collect()
+    const vehicles = await ctx.db.query('vehicles').collect()
+    return rows.map(row => ({ ...row, vehicle: row.vehicleSnapshot || (row.vehicleId ? vehicles.find(vehicle => vehicle._id === row.vehicleId) : null) || null }))
   }
 })
 
