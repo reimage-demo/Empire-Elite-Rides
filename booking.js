@@ -61,6 +61,7 @@ if (form) {
   let expirationTimer = null;
   let availabilityRequest = 0;
   const pendingCheckoutKey = 'eer-pending-checkout';
+  const quoteTimeoutMs = 12000;
 
   const pickup = initAddressAutocomplete(form.elements.pickupAddress, document.querySelector('#booking-pickup-suggestions'), { onInvalidate: invalidateQuote, onSelect: invalidateQuote });
   const dropoff = initAddressAutocomplete(form.elements.dropoffAddress, document.querySelector('#booking-dropoff-suggestions'), { onInvalidate: invalidateQuote });
@@ -351,11 +352,31 @@ if (form) {
     tick(); expirationTimer = window.setInterval(tick, 1000);
   }
 
+  function withQuoteTimeout(promise) {
+    return new Promise((resolve, reject) => {
+      const timeout = window.setTimeout(() => reject(new Error('The pricing request took too long.')), quoteTimeoutMs);
+      promise.then(
+        value => { window.clearTimeout(timeout); resolve(value); },
+        error => { window.clearTimeout(timeout); reject(error); }
+      );
+    });
+  }
+
+  async function requestBookingQuote(args) {
+    const client = await withQuoteTimeout(convexClient());
+    try {
+      return await withQuoteTimeout(client.action('quotes:generateBookingQuote', args));
+    } catch (error) {
+      if (error?.data) throw error;
+      quoteMessage.textContent = 'The pricing connection was slow. Retrying your price…';
+      return withQuoteTimeout(client.action('quotes:generateBookingQuote', args));
+    }
+  }
+
   async function calculateQuote() {
     applyPromotionButton.disabled = true; reserveButton.disabled = true; quoteMessage.textContent = 'Preparing your ride price…'; formMessage.textContent = '';
     try {
-      const client = await convexClient();
-      renderQuote(await client.action('quotes:generateBookingQuote', quoteArgs()));
+      renderQuote(await requestBookingQuote(quoteArgs()));
     } catch (error) {
       const message = backendMessage(error, 'We could not calculate this reservation. Review the details and try again.');
       quoteMessage.textContent = message;

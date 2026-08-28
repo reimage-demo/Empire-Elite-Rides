@@ -36,6 +36,14 @@ test('final booking step has one clear pay action without a recalculate button',
   assert.match(styles, /\.booking-step-actions\.final \{[^}]*margin-top: 38px;/)
 })
 
+test('automatic quote pricing times out and retries instead of staying stuck', () => {
+  assert.match(html, /booking\.js\?v=20260828-quote-recovery/)
+  assert.match(script, /const quoteTimeoutMs = 12000/)
+  assert.match(script, /The pricing connection was slow\. Retrying your price/)
+  assert.match(script, /return withQuoteTimeout\(client\.action\('quotes:generateBookingQuote', args\)\)/)
+  assert.match(script, /Try Pay Now Again/)
+})
+
 test('mobile booking keeps navigation visible in a single app-style screen', () => {
   assert.match(html, /<body class="booking-page">/)
   assert.match(styles, /\.booking-page \.booking-intro, \.booking-page \.site-footer \{ display: none; \}/)

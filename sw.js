@@ -1,4 +1,4 @@
-const CACHE_NAME = 'empire-elite-rides-v1'
+const CACHE_NAME = 'empire-elite-rides-v2'
 const APP_SHELL = [
   '/',
   '/booking.html',
